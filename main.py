@@ -1,110 +1,23 @@
 import pandas as pd
+from journal_entry import create_journal_from_charges,create_journal_from_transactions
 
 filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/combined_input_with_expenses.xlsx'
 
-# Define GL Codes
-GL_CODE_MAP = {
-    'Cash': '15110',
-    'Storage Revenue': '15120',
-    'Accounts Receivable': '16110',
-    'Expenses': '17105',
-    'Unearned Rent': '16578'
-}
 
 # Load both sheets from Excel
 def load_data(excel_file):
     charges_df = pd.read_excel(excel_file, sheet_name='charges_and_payments', parse_dates=['date'])
-    expenses_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
-    return charges_df, expenses_df
+    transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
+    transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
+    charges_df['date'] = pd.to_datetime(charges_df['date'], errors='coerce')
+    return charges_df, transactions_df
 
-# Generate General Journal entries from charges/payments
-def create_journal_from_charges(transactions):
-    journal = []
-
-    for _, row in transactions.iterrows():
-        # Revenue from charge
-        if row['charge'] > 0:
-            journal.append({
-                'date': row['date'],
-                'account': 'Storage Revenue',
-                'gl_code': GL_CODE_MAP['Storage Revenue'],
-                'debit': 0,
-                'credit': row['charge'],
-                'description': f"Charge - {row['description']}",
-                'tenant': row['tenant_name']
-            })
-
-        # Cash payment
-        if row['cash_payment'] > 0:
-            journal.append({
-                'date': row['date'],
-                'account': 'Cash',
-                'gl_code': GL_CODE_MAP['Cash'],
-                'debit': row['cash_payment'],
-                'credit': 0,
-                'description': f"Cash - {row['description']}",
-                'tenant': row['tenant_name']
-            })
-
-        # A/R for unpaid charge
-        if row['outstanding_charge'] > 0:
-            journal.append({
-                'date': row['date'],
-                'account': 'Accounts Receivable',
-                'gl_code': GL_CODE_MAP['Accounts Receivable'],
-                'debit': row['outstanding_charge'],
-                'credit': 0,
-                'description': f"A/R - {row['description']}",
-                'tenant': row['tenant_name']
-            })
-
-        # Advance payment only
-        if row['charge'] == 0 and row['cash_payment'] > 0:
-            journal.append({
-                'date': row['date'],
-                'account': 'Unearned Rent',
-                'gl_code': GL_CODE_MAP['Unearned Rent'],
-                'debit': 0,
-                'credit': row['cash_payment'],
-                'description': f"Advance Payment - {row['description']}",
-                'tenant': row['tenant_name']
-            })
-
-    return pd.DataFrame(journal)
-
-# Generate journal from expenses
-def create_journal_from_expenses(expenses):
-    journal = []
-
-    for _, row in expenses.iterrows():
-        # Debit: Expense
-        journal.append({
-            'date': row['date'],
-            'account': row['account'],
-            'gl_code': row['gl_code'],
-            'debit': row['amount'],
-            'credit': 0,
-            'description': f"Expense - {row['description']}",
-            'tenant': None
-        })
-        # Credit: Cash
-        journal.append({
-            'date': row['date'],
-            'account': 'Cash',
-            'gl_code': GL_CODE_MAP['Cash'],
-            'debit': 0,
-            'credit': row['amount'],
-            'description': f"Expense Payment - {row['description']}",
-            'tenant': None
-        })
-
-    return pd.DataFrame(journal)
 
 # Combine tenant and expense entries into one journal
-def create_general_journal(charges_df, expenses_df):
+def create_general_journal(charges_df, transactions_df):
     journal_charges = create_journal_from_charges(charges_df)
-    journal_expenses = create_journal_from_expenses(expenses_df)
-    return pd.concat([journal_charges, journal_expenses], ignore_index=True).sort_values(by='date')
+    journal_transactions = create_journal_from_transactions(transactions_df)
+    return pd.concat([journal_charges, journal_transactions], ignore_index=True).sort_values(by='date')
 
 # Create tenant ledgers
 def create_tenant_ledgers(transactions):
@@ -147,8 +60,8 @@ def save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, ou
 
 # Run full accounting pipeline
 def run_accounting_pipeline(excel_input, output_file):
-    charges_df, expenses_df = load_data(excel_input)
-    general_journal = create_general_journal(charges_df, expenses_df)
+    charges_df, transactions_df = load_data(excel_input)
+    general_journal = create_general_journal(charges_df, transactions_df)
     tenant_ledgers = create_tenant_ledgers(charges_df)
     gl_ledgers = create_gl_ledgers(general_journal)
     trial_balance = create_trial_balance(general_journal)
@@ -156,3 +69,4 @@ def run_accounting_pipeline(excel_input, output_file):
 
 # Example run:
 run_accounting_pipeline(excel_input = filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+
