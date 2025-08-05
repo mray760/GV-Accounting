@@ -1,0 +1,22 @@
+# Define GL Codes
+GL_CODE_MAP = {
+    #Asset
+    'Cash': '15110',
+    'Accounts Receivable': '16110',
+
+    #Liability
+    'Unearned Rent': '16578',
+    'Credit Card': '17859',
+
+
+    #Income
+    'Storage Revenue': '15120',
+    'Expense': '17105',
+
+
+    #Equity
+    'capital-pt':'50070',
+    'capital-rc':'50075',
+    'withdrawal-pt':'50085',
+    'withdrawal-rc':'50080'
+}
