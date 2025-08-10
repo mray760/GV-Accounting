@@ -1,0 +1,786 @@
+import pandas as pd
+from COA import GL_CODE_MAP
+
+
+
+
+# Generate journal from Transactions
+def create_journal_from_transactions(transactions):
+    journal = []
+    transactions['cash_amount'] = transactions['cash_amount'].fillna(0)
+    transactions['credit_amount'] = transactions['credit_amount'].fillna(0)
+
+
+
+    for _, row in transactions.iterrows():
+
+        ## Ray Capital Capital Contribution
+        if row['account'] =='capital-rc' and row['cash_amount'] > 0:
+
+        # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': row['cash_amount'],
+                'credit': 0,
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            # Credit: Capital
+            journal.append({
+                'date': row['date'],
+                'account': 'capital-rc',
+                'gl_code': GL_CODE_MAP['capital-rc'],
+                'debit': 0,
+                'credit': row['cash_amount'],
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+
+        ## Ray Protection Capital Contribution
+        if row['account'] == 'capital-pt' and row['cash_amount'] > 0:
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': row['cash_amount'],
+                'credit': 0,
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            # Credit: Capital
+            journal.append({
+                'date': row['date'],
+                'account': 'capital-pt',
+                'gl_code': GL_CODE_MAP['capital-pt'],
+                'debit': 0,
+                'credit': row['cash_amount'],
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+
+            ## Equipment Purchase - Cash
+        if row['account'] == 'equipment' and row['cash_amount'] < 0:
+            # Debit: Equipment
+            journal.append({
+                'date': row['date'],
+                'account': 'PP&E',
+                'gl_code': GL_CODE_MAP['PP&E'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            ## Equipment Purchase - Credit
+        if row['account'] == 'equipment' and row['credit_amount'] < 0:
+            # Debit: Equipment
+            journal.append({
+                'date': row['date'],
+                'account': 'PP&E',
+                'gl_code': GL_CODE_MAP['PP&E'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+
+            ## Property Purchase
+        if row['account'] == 'business_acq' and row['cash_amount'] < 0:
+            # Debit: Business Acquisition
+            journal.append({
+                'date': row['date'],
+                'account': 'PP&E',
+                'gl_code': GL_CODE_MAP['PP&E'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"{row['description']}",
+                'tenant': None
+            })
+        ## Bad Debt Expense - Cash
+        if row['account'] == 'Bad Debt Expense' and row['cash_amount'] < 0:
+            # Debit: Bad Debt Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Bad Debt Expense',
+                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Bad Debt Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Bad Debt Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Bad Debt Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Bad Debt Expense':
+            # Debit: Bad Debt Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Bad Debt Expense',
+                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Bad Debt Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Bad Debt Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Utilities Expense - Cash
+        if row['account'] == 'Utilities Expense' and row['cash_amount'] < 0:
+            # Debit: Utilities Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Utilities Expense',
+                'gl_code': GL_CODE_MAP['Utilities Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Utilities Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Utilities Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Utilities Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Utilities Expense':
+            # Debit: Utilities Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Utilities Expense',
+                'gl_code': GL_CODE_MAP['Utilities Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Utilities Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Utilities Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Property Tax - Cash
+        if row['account'] == 'Property Tax' and row['cash_amount'] < 0:
+            # Debit: Property Tax
+            journal.append({
+                'date': row['date'],
+                'account': 'Property Tax',
+                'gl_code': GL_CODE_MAP['Property Tax'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Property Tax - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Property Tax Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Property Tax - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Property Tax':
+            # Debit: Property Tax
+            journal.append({
+                'date': row['date'],
+                'account': 'Property Tax',
+                'gl_code': GL_CODE_MAP['Property Tax'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Property Tax - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Property Tax Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Miscellaneous Expense - Cash
+        if row['account'] == 'Miscellaneous Expense' and row['cash_amount'] < 0:
+            # Debit: Miscellaneous Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Miscellaneous Expense',
+                'gl_code': GL_CODE_MAP['Miscellaneous Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Miscellaneous Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Miscellaneous Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Miscellaneous Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Miscellaneous Expense':
+            # Debit: Miscellaneous Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Miscellaneous Expense',
+                'gl_code': GL_CODE_MAP['Miscellaneous Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Miscellaneous Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Miscellaneous Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Maintenance Expense - Cash
+        if row['account'] == 'Maintenance Expense' and row['cash_amount'] < 0:
+            # Debit: Maintenance Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Maintenance Expense',
+                'gl_code': GL_CODE_MAP['Maintenance Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Maintenance Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Maintenance Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Maintenance Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Maintenance Expense':
+            # Debit: Maintenance Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Maintenance Expense',
+                'gl_code': GL_CODE_MAP['Maintenance Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Maintenance Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Maintenance Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Vendor Expense - Cash
+        if row['account'] == 'Vendor Expense' and row['cash_amount'] < 0:
+            # Debit: Vendor Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Vendor Expense',
+                'gl_code': GL_CODE_MAP['Vendor Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Vendor Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Vendor Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Vendor Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Vendor Expense':
+            # Debit: Vendor Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Vendor Expense',
+                'gl_code': GL_CODE_MAP['Vendor Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Vendor Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Vendor Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Supplies Expense - Cash
+        if row['account'] == 'Supplies Expense' and row['cash_amount'] < 0:
+            # Debit: Supplies Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Supplies Expense',
+                'gl_code': GL_CODE_MAP['Supplies Expense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Supplies Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Supplies Expense Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Supplies Expense - Credit
+        if row['credit_amount'] < 0 and row['account'] == 'Supplies Expense':
+            # Debit: Supplies Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Supplies Expense',
+                'gl_code': GL_CODE_MAP['Supplies Expense'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Supplies Expense - {row['description']}",
+                'tenant': None
+            })
+            # Credit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Supplies Expense Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ###### Refunds
+        ## Bad Debt Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Bad Debt Expense':
+            # Credit: Bad Debt Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Bad Debt Expense',
+                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Bad Debt Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Bad Debt Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Bad Debt Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Bad Debt Expense':
+            # Credit: Bad Debt Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Bad Debt Expense',
+                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Bad Debt Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Bad Debt Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Utilities Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Utilities Expense':
+            # Credit: Utilities Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Utilities Expense',
+                'gl_code': GL_CODE_MAP['Utilities Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Utilities Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Utilities Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Utilities Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Utilities Expense':
+            # Credit: Utilities Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Utilities Expense',
+                'gl_code': GL_CODE_MAP['Utilities Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Utilities Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Utilities Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Property Tax - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Property Tax':
+            # Credit: Property Tax
+            journal.append({
+                'date': row['date'],
+                'account': 'Property Tax',
+                'gl_code': GL_CODE_MAP['Property Tax'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Property Tax Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Property Tax Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Property Tax - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Property Tax':
+            # Credit: Property Tax
+            journal.append({
+                'date': row['date'],
+                'account': 'Property Tax',
+                'gl_code': GL_CODE_MAP['Property Tax'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Property Tax Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Property Tax Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Miscellaneous Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Miscellaneous Expense':
+            # Credit: Miscellaneous Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Miscellaneous Expense',
+                'gl_code': GL_CODE_MAP['Miscellaneous Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Miscellaneous Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Miscellaneous Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Miscellaneous Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Miscellaneous Expense':
+            # Credit: Miscellaneous Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Miscellaneous Expense',
+                'gl_code': GL_CODE_MAP['Miscellaneous Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Miscellaneous Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Miscellaneous Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Maintenance Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Maintenance Expense':
+            # Credit: Maintenance Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Maintenance Expense',
+                'gl_code': GL_CODE_MAP['Maintenance Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Maintenance Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Maintenance Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Maintenance Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Maintenance Expense':
+            # Credit: Maintenance Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Maintenance Expense',
+                'gl_code': GL_CODE_MAP['Maintenance Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Maintenance Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Maintenance Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Vendor Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Vendor Expense':
+            # Credit: Vendor Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Vendor Expense',
+                'gl_code': GL_CODE_MAP['Vendor Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Vendor Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Vendor Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Vendor Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Vendor Expense':
+            # Credit: Vendor Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Vendor Expense',
+                'gl_code': GL_CODE_MAP['Vendor Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Vendor Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Vendor Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+        ## Supplies Expense - Refund (Cash)
+        if row['cash_amount'] > 0 and row['account'] == 'Supplies Expense':
+            # Credit: Supplies Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Supplies Expense',
+                'gl_code': GL_CODE_MAP['Supplies Expense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Supplies Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Supplies Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+        ## Supplies Expense - Refund (Credit Card)
+        if row['credit_amount'] > 0 and row['account'] == 'Supplies Expense':
+            # Credit: Supplies Expense
+            journal.append({
+                'date': row['date'],
+                'account': 'Supplies Expense',
+                'gl_code': GL_CODE_MAP['Supplies Expense'],
+                'debit': 0,
+                'credit': abs(row['credit_amount']),
+                'description': f"Supplies Expense Refund - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['credit_amount']),
+                'credit': 0,
+                'description': f"Supplies Expense Refund Payment - {row['description']}",
+                'tenant': None
+            })
+
+##################### Pay Off Credit Card
+        ## Pay off credit card
+        if row['cash_amount'] < 0 and row['account'] == 'Credit Card':
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Chase Bank Credit - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Credit Card',
+                'gl_code': GL_CODE_MAP['Credit Card'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Chase Bank Credit - {row['description']}",
+                'tenant': None
+            })
+
+    return pd.DataFrame(journal)
