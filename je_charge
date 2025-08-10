@@ -1,0 +1,59 @@
+import pandas as pd
+from COA import GL_CODE_MAP
+
+
+
+def create_journal_from_charges(charges):
+    journal = []
+
+    for _, row in charges.iterrows():
+        # Revenue from charge
+        if row['charge'] > 0:
+            journal.append({
+                'date': row['date'],
+                'account': 'Storage Revenue',
+                'gl_code': GL_CODE_MAP['Storage Revenue'],
+                'debit': 0,
+                'credit': row['charge'],
+                'description': f"Charge - {row['description']}",
+                'tenant': row['tenant_name']
+            })
+
+        # Cash payment
+        if row['cash_payment'] > 0:
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': row['cash_payment'],
+                'credit': 0,
+                'description': f"Cash - {row['description']}",
+                'tenant': row['tenant_name']
+            })
+
+        # A/R for unpaid charge
+        if row['outstanding_charge'] > 0:
+            journal.append({
+                'date': row['date'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': row['outstanding_charge'],
+                'credit': 0,
+                'description': f"A/R - {row['description']}",
+                'tenant': row['tenant_name']
+            })
+
+        # Advance payment only
+        if row['charge'] == 0 and row['cash_payment'] > 0:
+            journal.append({
+                'date': row['date'],
+                'account': 'Unearned Rent',
+                'gl_code': GL_CODE_MAP['Unearned Rent'],
+                'debit': 0,
+                'credit': row['cash_payment'],
+                'description': f"Advance Payment - {row['description']}",
+                'tenant': row['tenant_name']
+            })
+
+    return pd.DataFrame(journal)
+
