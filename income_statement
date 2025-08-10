@@ -1,0 +1,48 @@
+import pandas as pd
+
+
+
+def create_income_statement(trial_balance):
+    # Define revenue and expense accounts (you can modify these lists based on your Chart of Accounts)
+    revenue_accounts = ['Storage Revenue', 'Miscellaneous Income']  # Example revenue accounts
+    expense_accounts = ['Bad Debt Expense', 'Utilities Expense', 'Miscellaneous Expense', 'Vendor Expense', 'Supplies Expense']  # Example expense accounts
+
+    # Filter revenue accounts from the trial balance and calculate totals
+    revenues = trial_balance[trial_balance['account'].isin(revenue_accounts)].copy()  # Make a copy to avoid SettingWithCopyWarning
+    revenues.loc[:, 'Net D/C'] = revenues['Net D/C'].apply(lambda x: abs(x))  # Only consider credits (revenue accounts typically have credits)
+    total_revenue = revenues['Net D/C'].sum()  # Sum of all credits
+
+    # Filter expense accounts from the trial balance and calculate totals
+    expenses = trial_balance[trial_balance['account'].isin(expense_accounts)].copy()  # Make a copy to avoid SettingWithCopyWarning
+    expenses.loc[:, 'Net D/C'] = expenses['Net D/C'].apply(lambda x: -abs(x))  # Only consider debits (expense accounts typically have debits)
+    total_expense = expenses['Net D/C'].sum()  # Sum of all debits
+
+    # Calculate net income
+    net_income = total_revenue + total_expense
+
+    # Create a DataFrame to list all accounts with their respective values
+    revenue_data = revenues[['account', 'Net D/C']].rename(columns={'Net D/C': 'Amount'})
+    revenue_data['Type'] = 'Revenue'
+
+    expense_data = expenses[['account', 'Net D/C']].rename(columns={'Net D/C': 'Amount'})
+    expense_data['Type'] = 'Expense'
+
+    # Concatenate all data into a single DataFrame
+    income_statement_df = pd.concat([revenue_data, expense_data], ignore_index=True)
+
+    # Add totals at the bottom
+    totals = pd.DataFrame({
+        'account': ['Total Revenue', 'Total Expenses', 'Net Income'],
+        'Amount': [total_revenue, total_expense, net_income],
+        'Type': ['Total', 'Total', 'Net Income']
+    })
+
+    num_empty_rows = 4
+    empty_rows = pd.DataFrame(
+        {'account': [None] * num_empty_rows, 'Amount': [None] * num_empty_rows, 'Type': [None] * num_empty_rows})
+
+    # Append totals to the income statement DataFrame
+    income_statement_df = pd.concat([income_statement_df, empty_rows, totals], ignore_index=True)
+
+    # Optionally, you can sort by account type or any other column if needed
+    return income_statement_df
