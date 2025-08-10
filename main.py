@@ -1,6 +1,7 @@
 import pandas as pd
 from je_charge import create_journal_from_charges
 from je_tran import create_journal_from_transactions
+from income_statement import create_income_statement
 
 filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.xlsx'
 
@@ -52,12 +53,13 @@ def create_trial_balance(general_journal):
     return tb
 
 # Save to Excel
-def save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, output_file):
+def save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, income_statement, output_file):
     with pd.ExcelWriter(output_file) as writer:
         general_journal.to_excel(writer, sheet_name='General Journal', index=False)
         tenant_ledgers.to_excel(writer, sheet_name='Tenant Ledgers', index=False)
         gl_ledgers.to_excel(writer, sheet_name='GL Ledgers', index=False)
         trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
+        income_statement.to_excel(writer,sheet_name='Income Statement',index=False)
 
 # Run full accounting pipeline
 def run_accounting_pipeline(excel_input, output_file):
@@ -66,7 +68,8 @@ def run_accounting_pipeline(excel_input, output_file):
     tenant_ledgers = create_tenant_ledgers(charges_df)
     gl_ledgers = create_gl_ledgers(general_journal)
     trial_balance = create_trial_balance(general_journal)
-    save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, output_file)
+    income_statement = create_income_statement(trial_balance)
+    save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, income_statement, output_file)
 
 # Example run:
 run_accounting_pipeline(excel_input = filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
