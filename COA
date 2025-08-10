@@ -3,15 +3,26 @@ GL_CODE_MAP = {
     #Asset
     'Cash': '15110',
     'Accounts Receivable': '16110',
+    'PP&E': '15745',
+
+
 
     #Liability
     'Unearned Rent': '16578',
     'Credit Card': '17859',
 
 
-    #Income
+    #Income/Expense
     'Storage Revenue': '15120',
-    'Expense': '17105',
+    'Miscellaneous Expense': '18501',
+    'Vendor Expense': '19506',
+    'Supplies Expense': '19510',
+    'Utilities Expense': '17105',
+    'Maintenance Expense': '19502',
+    'Property Tax': '17205',
+    'Bad Debt Expense': '16320',
+    
+
 
 
     #Equity
