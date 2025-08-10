@@ -1,7 +1,8 @@
 import pandas as pd
-from journal_entry import create_journal_from_charges,create_journal_from_transactions
+from je_charge import create_journal_from_charges
+from je_tran import create_journal_from_transactions
 
-filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/combined_input_with_expenses.xlsx'
+filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.xlsx'
 
 
 # Load both sheets from Excel
@@ -47,7 +48,7 @@ def create_trial_balance(general_journal):
         total_debit=('debit', 'sum'),
         total_credit=('credit', 'sum')
     ).reset_index()
-    tb['balance'] = tb['total_debit'] - tb['total_credit']
+    tb['Net D/C'] = tb['total_debit'] - tb['total_credit']
     return tb
 
 # Save to Excel
@@ -69,4 +70,3 @@ def run_accounting_pipeline(excel_input, output_file):
 
 # Example run:
 run_accounting_pipeline(excel_input = filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
-
