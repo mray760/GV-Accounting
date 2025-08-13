@@ -21,6 +21,7 @@ GL_CODE_MAP = {
     'Maintenance Expense': '19502',
     'Property Tax': '17205',
     'Bad Debt Expense': '16320',
+    'Storage Revenue - Late Fees': '19403',
     
 
 
