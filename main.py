@@ -9,6 +9,8 @@ filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.x
 # Load both sheets from Excel
 def load_data(excel_file):
     charges_df = pd.read_excel(excel_file, sheet_name='charges_and_payments', parse_dates=['date'])
+    charges_df['outstanding_amount'] = charges_df['charge'].fillna(0) + charges_df['late_fees'].fillna(0) - charges_df['credit'].fillna(0) - charges_df['cash_payment'].fillna(0)
+    charges_df['net_charge'] = charges_df['charge'].fillna(0) - charges_df['credit'].fillna(0)
     transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
     transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
     charges_df['date'] = pd.to_datetime(charges_df['date'], errors='coerce')
@@ -32,11 +34,12 @@ def create_tenant_ledgers(transactions):
             'date': row['date'],
             'description': row['description'],
             'charge': row['charge'],
-            'payment': row['cash_payment']
+            'payment': row['cash_payment'],
+            'outstanding_amount': row['outstanding_amount']
         })
 
     df = pd.DataFrame(ledger)
-    df['balance'] = df.groupby('tenant')[['charge', 'payment']].cumsum().eval('charge - payment')
+    df['balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
     return df
 
 # GL Ledger
