@@ -10,7 +10,7 @@ def create_journal_from_charges(charges):
         # Revenue from charge
         if row['net_charge'] > 0:
             journal.append({
-                'date': row['date'],
+                'period': row['Period'],
                 'account': 'Storage Revenue',
                 'gl_code': GL_CODE_MAP['Storage Revenue'],
                 'debit': 0,
@@ -22,7 +22,7 @@ def create_journal_from_charges(charges):
         # Cash payment
         if row['cash_payment'] > 0:
             journal.append({
-                'date': row['date'],
+                'period': row['Period'],
                 'account': 'Cash',
                 'gl_code': GL_CODE_MAP['Cash'],
                 'debit': row['cash_payment'],
@@ -34,7 +34,7 @@ def create_journal_from_charges(charges):
         # A/R for unpaid charge
         if row['outstanding_amount'] > 0:
             journal.append({
-                'date': row['date'],
+                'period': row['Period'],
                 'account': 'Accounts Receivable',
                 'gl_code': GL_CODE_MAP['Accounts Receivable'],
                 'debit': row['outstanding_amount'],
@@ -46,7 +46,7 @@ def create_journal_from_charges(charges):
         # Advance payment only
         if row['late_fees'] > 0:
             journal.append({
-                'date': row['date'],
+                'period': row['Period'],
                 'account': 'Storage Revenue - Late Fees',
                 'gl_code': GL_CODE_MAP['Storage Revenue - Late Fees'],
                 'debit': 0,
