@@ -2,19 +2,10 @@ import pandas as pd
 from je_charge import create_journal_from_charges
 from je_tran import create_journal_from_transactions
 from income_statement import create_income_statement
+from load_data import load_data
 
-filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.xlsx'
+filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
 
-
-# Load both sheets from Excel
-def load_data(excel_file):
-    charges_df = pd.read_excel(excel_file, sheet_name='charges_and_payments', parse_dates=['date'])
-    charges_df['outstanding_amount'] = charges_df['charge'].fillna(0) + charges_df['late_fees'].fillna(0) - charges_df['credit'].fillna(0) - charges_df['cash_payment'].fillna(0)
-    charges_df['net_charge'] = charges_df['charge'].fillna(0) - charges_df['credit'].fillna(0)
-    transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
-    transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
-    charges_df['date'] = pd.to_datetime(charges_df['date'], errors='coerce')
-    return charges_df, transactions_df
 
 
 # Combine tenant and expense entries into one journal
@@ -31,9 +22,9 @@ def create_tenant_ledgers(transactions):
         ledger.append({
             'tenant': row['tenant_name'],
             'unit_number': row['unit_number'],
-            'date': row['date'],
+            'Period': row['Period'],
             'description': row['description'],
-            'charge': row['charge'],
+            'charge': row['monthly_rate'],
             'payment': row['cash_payment'],
             'outstanding_amount': row['outstanding_amount']
         })
