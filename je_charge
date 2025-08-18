@@ -8,13 +8,13 @@ def create_journal_from_charges(charges):
 
     for _, row in charges.iterrows():
         # Revenue from charge
-        if row['net_charge'] > 0:
+        if row['monthly_rate'] > 0:
             journal.append({
                 'period': row['Period'],
                 'account': 'Storage Revenue',
                 'gl_code': GL_CODE_MAP['Storage Revenue'],
                 'debit': 0,
-                'credit': row['net_charge'],
+                'credit': row['monthly_rate'],
                 'description': f"Charge - {row['description']}",
                 'tenant': row['tenant_name']
             })
@@ -43,17 +43,90 @@ def create_journal_from_charges(charges):
                 'tenant': row['tenant_name']
             })
 
-        # Advance payment only
-        if row['late_fees'] > 0:
+        # Late Fee Charge
+        if row['late_fees_charge'] > 0:
+            journal.append({
+                'period': row['Period'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': abs(row['late_fees_charge']),
+                'credit': 0,
+                'description': f"Late Fees- {row['description']}",
+                'tenant': row['tenant_name']
+            })
             journal.append({
                 'period': row['Period'],
                 'account': 'Storage Revenue - Late Fees',
                 'gl_code': GL_CODE_MAP['Storage Revenue - Late Fees'],
                 'debit': 0,
-                'credit': abs(row['late_fees']),
-                'description': f"Late Fees- {row['description']}",
-                'tenant': row['tenant_name']
+                'credit': abs(row['late_fees_charge']),
+                'description': f"Tenant Credit - {row['description']}",
+                'tenant': None
             })
 
+        # Late Fee payment
+        if row['late_fees_payment'] > 0:
+            journal.append({
+                'period': row['Period'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': 0,
+                'credit': abs(row['late_fees_payment']),
+                'description': f"Late Fee payment- {row['description']}",
+                'tenant': row['tenant_name']
+            })
+            journal.append({
+                'period': row['Period'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['late_fees_payment']),
+                'credit': 0,
+                'description': f"Tenant Credit - {row['description']}",
+                'tenant': None
+            })
+
+        # Tenant Credits
+        if row['credit'] > 0:
+            journal.append({
+                'period': row['Period'],
+                'account': 'Storage Revenue - Tenant Credits',
+                'gl_code': GL_CODE_MAP['Storage Revenue - Tenant Credits'],
+                'credit': 0,
+                'debit': abs(row['credit']),
+                'description': f"Credit- {row['description']}",
+                'tenant': row['tenant_name']
+            })
+            # Credit: Accounts Receivable
+            journal.append({
+                'period': row['Period'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': 0,
+                'credit': abs(row['credit']),
+                'description': f"Tenant Credit - {row['description']}",
+                'tenant': None
+            })
+
+        # Write Offs
+        if row['write_off'] > 0:
+            journal.append({
+                'period': row['Period'],
+                'account': 'Bad Debt Expense',
+                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
+                'credit': 0,
+                'debit': abs(row['write_off']),
+                'description': f"Credit- {row['description']}",
+                'tenant': row['tenant_name']
+            })
+            # Credit: Accounts Receivable
+            journal.append({
+                'period': row['Period'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': 0,
+                'credit': abs(row['write_off']),
+                'description': f"Tenant Credit - {row['description']}",
+                'tenant': None
+            })
     return pd.DataFrame(journal)
 
