@@ -2,7 +2,7 @@ import pandas as pd
 from je_charge import create_journal_from_charges
 from je_tran import create_journal_from_transactions
 from income_statement import create_income_statement
-from load_data import load_data
+from load_excel import load_data
 
 filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
 
@@ -11,8 +11,9 @@ filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
 # Combine tenant and expense entries into one journal
 def create_general_journal(charges_df, transactions_df):
     journal_charges = create_journal_from_charges(charges_df)
+    journal_charges.to_excel('/Users/mattray/Desktop/texting.xlsx')
     journal_transactions = create_journal_from_transactions(transactions_df)
-    return pd.concat([journal_charges, journal_transactions], ignore_index=True).sort_values(by='date')
+    return pd.concat([journal_charges, journal_transactions], ignore_index=True)
 
 # Create tenant ledgers
 def create_tenant_ledgers(transactions):
@@ -25,17 +26,21 @@ def create_tenant_ledgers(transactions):
             'Period': row['Period'],
             'description': row['description'],
             'charge': row['monthly_rate'],
-            'payment': row['cash_payment'],
+            'late fee': row['late_fees_charge'],
+            'payment': -row['cash_payment'],
+            'write off': -row['write_off'],
+            'credit': -row['credit'],
+            'auction': -row['auction'],
             'outstanding_amount': row['outstanding_amount']
         })
 
     df = pd.DataFrame(ledger)
-    df['balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
+    df['outstanding balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
     return df
 
 # GL Ledger
 def create_gl_ledgers(general_journal):
-    return general_journal.sort_values(by=['gl_code', 'date'])
+    return general_journal.sort_values(by=['gl_code'])
 
 # Trial Balance
 def create_trial_balance(general_journal):
