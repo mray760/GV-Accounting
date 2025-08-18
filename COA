@@ -22,6 +22,8 @@ GL_CODE_MAP = {
     'Property Tax': '17205',
     'Bad Debt Expense': '16320',
     'Storage Revenue - Late Fees': '19403',
+    'Storage Revenue - Auction': '19405',
+    'Storage Revenue - Tenant Credits': '19406',
     
 
 
