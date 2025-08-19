@@ -25,16 +25,18 @@ def create_tenant_ledgers(transactions):
             'unit_number': row['unit_number'],
             'Period': row['Period'],
             'description': row['description'],
-            'charge': row['monthly_rate'],
-            'late fee': row['late_fees_charge'],
-            'payment': -row['cash_payment'],
-            'write off': -row['write_off'],
-            'credit': -row['credit'],
-            'auction': -row['auction'],
-            'outstanding_amount': row['outstanding_amount']
+            'monthly_rate': row['monthly_rate'],
+            'late_fees_charge': row['late_fees_charge'],
+            'late_fees_payment': row['late_fees_payment'],
+            'cash_payment': row['cash_payment'],
+            'write_off': row['write_off'],
+            'credit': row['credit'],
+            'auction': row['auction']
+
         })
 
     df = pd.DataFrame(ledger)
+    df['outstanding_amount'] = df['monthly_rate'].fillna(0)  - df['cash_payment'].fillna(0) + df['late_fees_charge'].fillna(0) - df['late_fees_payment'].fillna(0) - df['credit'].fillna(0) - df['write_off'].fillna(0) - df['auction'].fillna(0)
     df['outstanding balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
     return df
 
