@@ -7,7 +7,7 @@ def load_data(excel_file):
     charges_df = pd.read_excel(excel_file, sheet_name='charges_and_payments')
     charges_df = charges_df[charges_df['unit_status'] == 'Occupied']
     charges_df["Period"] = pd.to_datetime(charges_df["Period"], format="%Y-%m")
-    charges_df['outstanding_amount'] = charges_df['monthly_rate'].fillna(0) + charges_df['late_fees_charge'].fillna(0) - charges_df['credit'].fillna(0) - charges_df['cash_payment'].fillna(0) - charges_df['write_off'].fillna(0) - charges_df['auction'].fillna(0) - charges_df['late_fees_payment'].fillna(0)
+    charges_df['outstanding_amount'] = charges_df['monthly_rate'].fillna(0)  - charges_df['cash_payment'].fillna(0)
     charges_df['net_charge'] = charges_df['monthly_rate'].fillna(0) - charges_df['cash_payment'].fillna(0)
     charges_df['tenant_name'] = charges_df['tenant_name'].fillna('empty')
     print(charges_df.head())
