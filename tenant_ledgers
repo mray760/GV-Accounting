@@ -37,9 +37,11 @@ def get_openings_df(conn, target_month):
 
 
 
-df = get_openings_df(conn=engine,target_month=current_period)
+opening_df = get_openings_df(conn=engine,target_month=current_period)
 
-print(df)
+
+
+
 
 
 
@@ -68,3 +70,27 @@ def create_tenant_ledgers_2(transactions):
     df['outstanding balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
     closing_df = df
     return closing_df
+
+closing_df = create_tenant_ledgers_2(charges_df)
+
+def merge_and_calc(opening_df,closing_df):
+    #merge df
+    merged_df = pd.merge(opening_df, closing_df, on='unit_number', how="inner")
+    col_index = merged_df.columns.get_loc("opening_balance")
+    df = merged_df.iloc[:, col_index:]
+
+
+    #calculate ending balances
+    df['outstanding_balances_2'] = df['opening_balance'].fillna(0) + df['monthly_rate_y'].fillna(0) - df['cash_payment_y'].fillna(0) + df['late_fees_charge'].fillna(0) - df[
+        'late_fees_payment'].fillna(0) - df['credit'].fillna(0) - df['write_off'].fillna(0) - df['auction'].fillna(0)
+
+    new_df = df
+
+    return new_df
+
+
+new_df = merge_and_calc(opening_df,closing_df)
+
+print(new_df)
+
+new_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_2.xlsx')
