@@ -1,0 +1,70 @@
+import pandas as pd
+from load_excel import load_data
+from sqlalchemy import create_engine, text
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+
+
+
+current_period = '2025-09'
+current_period = datetime.strptime(current_period, "%Y-%m").date()
+
+filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
+
+charges_df, transactions_df = load_data(filepath)
+
+HOST = "database-1.cm3s8qw6myma.us-east-1.rds.amazonaws.com"
+PORT = 3306
+DB   = "mvsgv"
+USER = "mattray760"              # or master user
+PWD  = "Uhglbk5478!"
+
+# Basic (no SSL)
+engine = create_engine(f"mysql+pymysql://{USER}:{PWD}@{HOST}:{PORT}/{DB}",
+                       pool_pre_ping=True)
+
+
+def get_openings_df(conn, target_month):
+
+    prior = target_month - relativedelta(months=1)
+    sql = text("""
+       Select * from monthly_balances_test
+    """)
+    opening_df = pd.read_sql(sql, conn, params={"prior": prior})
+
+    opening_df["opening_balance"] = opening_df["outstanding_amount"].fillna(0).astype(int)
+    return opening_df
+
+
+
+df = get_openings_df(conn=engine,target_month=current_period)
+
+print(df)
+
+
+
+# Create tenant ledgers
+def create_tenant_ledgers_2(transactions):
+    ledger = []
+
+    for _, row in transactions.iterrows():
+        ledger.append({
+            'tenant': row['tenant_name'],
+            'unit_number': row['unit_number'],
+            'Period': row['Period'],
+            'description': row['description'],
+            'monthly_rate': row['monthly_rate'],
+            'late_fees_charge': row['late_fees_charge'],
+            'late_fees_payment': row['late_fees_payment'],
+            'cash_payment': row['cash_payment'],
+            'write_off': row['write_off'],
+            'credit': row['credit'],
+            'auction': row['auction']
+
+        })
+
+    df = pd.DataFrame(ledger)
+    df['outstanding_amount'] = df['monthly_rate'].fillna(0)  - df['cash_payment'].fillna(0) + df['late_fees_charge'].fillna(0) - df['late_fees_payment'].fillna(0) - df['credit'].fillna(0) - df['write_off'].fillna(0) - df['auction'].fillna(0)
+    df['outstanding balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
+    closing_df = df
+    return closing_df
