@@ -61,7 +61,7 @@ def create_journal_from_charges(charges):
                 'debit': 0,
                 'credit': abs(row['late_fees_charge']),
                 'description': f"Tenant Credit - {row['description']}",
-                'tenant': None
+                'tenant': row['tenant_name']
             })
 
         # Late Fee payment
@@ -82,7 +82,7 @@ def create_journal_from_charges(charges):
                 'debit': abs(row['late_fees_payment']),
                 'credit': 0,
                 'description': f"Tenant Credit - {row['description']}",
-                'tenant': None
+                'tenant': row['tenant_name']
             })
 
         # Tenant Credits
@@ -104,7 +104,7 @@ def create_journal_from_charges(charges):
                 'debit': 0,
                 'credit': abs(row['credit']),
                 'description': f"Tenant Credit - {row['description']}",
-                'tenant': None
+                'tenant': row['tenant_name']
             })
 
         # Write Offs
@@ -126,7 +126,29 @@ def create_journal_from_charges(charges):
                 'debit': 0,
                 'credit': abs(row['write_off']),
                 'description': f"Tenant Credit - {row['description']}",
-                'tenant': None
+                'tenant': row['tenant_name']
+            })
+
+         # Auctions
+        if row['auction'] > 0:
+            journal.append({
+                'period': row['Period'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'credit': 0,
+                'debit': abs(row['auction']),
+                'description': f"Auction- {row['description']}",
+                'tenant': row['tenant_name']
+            })
+            # Credit: Accounts Receivable
+            journal.append({
+                'period': row['Period'],
+                'account': 'Accounts Receivable',
+                'gl_code': GL_CODE_MAP['Accounts Receivable'],
+                'debit': 0,
+                'credit': abs(row['auction']),
+                'description': f"Auction - {row['description']}",
+                'tenant': row['tenant_name']
             })
     return pd.DataFrame(journal)
 
