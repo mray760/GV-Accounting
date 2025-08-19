@@ -73,9 +73,24 @@ def create_tenant_ledgers_2(transactions):
 
 closing_df = create_tenant_ledgers_2(charges_df)
 
+
 def merge_and_calc(opening_df,closing_df):
+    closing_df_renamed = closing_df.rename(columns={
+        "description": "description_new",
+        "monthly_rate": "monthly_rate_new",
+        "late_fees_charge": "late_fees_charge_new",
+        "late_fees_payment": "late_fees_payment_new",
+        "cash_payment": "cash_payment_new",
+        "write_off": "write_off_new",
+        "credit": "credit_new",
+        "auction": "auction_new",
+        "outstanding_amount": "outstanding_amount_new",
+        "outstanding balance": "outstanding_balance_new"
+            })
+    closing_df_renamed.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_3.xlsx')
+
     #merge df
-    merged_df = pd.merge(opening_df, closing_df, on='unit_number', how="inner")
+    merged_df = pd.merge(opening_df, closing_df_renamed, on='unit_number', how="inner")
     col_index = merged_df.columns.get_loc("opening_balance")
     df = merged_df.iloc[:, col_index:]
 
@@ -93,4 +108,4 @@ new_df = merge_and_calc(opening_df,closing_df)
 
 print(new_df)
 
-new_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_2.xlsx')
+closing_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_3.xlsx')
