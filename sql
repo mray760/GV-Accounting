@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine, text
-from load_data import load_data
+from load_excel import load_data
 
 filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
 
@@ -15,6 +15,7 @@ PWD  = "Uhglbk5478!"
 engine = create_engine(f"mysql+pymysql://{USER}:{PWD}@{HOST}:{PORT}/{DB}",
                        pool_pre_ping=True)
 
+charges_df = charges_df[['Period','tenant_name','unit_number','monthly_rate','cash_payment','late_fees_charge','late_fees_payment','credit','write_off','auction','outstanding_balance']]
 
-charges_df.to_sql("monthly_balances_test", engine, if_exists="append",
+charges_df.to_sql("monthly_balances_test_1", engine, if_exists="append",
           index=False, chunksize=1000, method="multi")
