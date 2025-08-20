@@ -9,7 +9,7 @@ from datetime import datetime
 current_period = '2025-09'
 current_period = datetime.strptime(current_period, "%Y-%m").date()
 
-filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
+filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test_sept.xlsx'
 
 charges_df, transactions_df = load_data(filepath)
 
@@ -24,11 +24,19 @@ engine = create_engine(f"mysql+pymysql://{USER}:{PWD}@{HOST}:{PORT}/{DB}",
                        pool_pre_ping=True)
 
 
+def initialize(engine,charges_df):
+    charges_df.to_sql("monthly_balances_test_1", engine, if_exists="append",
+                      index=False, chunksize=1000, method="multi")
+    return print("This has been successfully uploaded")
+
+
+
+
 def get_openings_df(conn, target_month):
 
     prior = target_month - relativedelta(months=1)
     sql = text("""
-       Select * from monthly_balances_test
+       Select * from monthly_balances_test_1
     """)
     opening_df = pd.read_sql(sql, conn, params={"prior": prior})
 
@@ -37,16 +45,8 @@ def get_openings_df(conn, target_month):
 
 
 
-opening_df = get_openings_df(conn=engine,target_month=current_period)
-
-
-
-
-
-
-
 # Create tenant ledgers
-def create_tenant_ledgers_2(transactions):
+def create_closing_df(transactions):
     ledger = []
 
     for _, row in transactions.iterrows():
@@ -71,8 +71,6 @@ def create_tenant_ledgers_2(transactions):
     closing_df = df
     return closing_df
 
-closing_df = create_tenant_ledgers_2(charges_df)
-
 
 def merge_and_calc(opening_df,closing_df):
     closing_df_renamed = closing_df.rename(columns={
@@ -96,16 +94,23 @@ def merge_and_calc(opening_df,closing_df):
 
 
     #calculate ending balances
-    df['outstanding_balances_2'] = df['opening_balance'].fillna(0) + df['monthly_rate_y'].fillna(0) - df['cash_payment_y'].fillna(0) + df['late_fees_charge'].fillna(0) - df[
-        'late_fees_payment'].fillna(0) - df['credit'].fillna(0) - df['write_off'].fillna(0) - df['auction'].fillna(0)
+    df['outstanding_balances_2'] = df['opening_balance'].fillna(0) + df['monthly_rate_new'].fillna(0) - df['cash_payment_new'].fillna(0) + df['late_fees_charge_new'].fillna(0) - df[
+        'late_fees_payment_new'].fillna(0) - df['credit_new'].fillna(0) - df['write_off_new'].fillna(0) - df['auction_new'].fillna(0)
 
     new_df = df
 
     return new_df
 
 
-new_df = merge_and_calc(opening_df,closing_df)
 
-print(new_df)
+def run_pipeline(charges_df):
+    opening_df = get_openings_df(conn=engine,target_month=current_period)
+    closing_df = create_closing_df(charges_df)
+    merged_df = merge_and_calc(opening_df,closing_df)
+    return merged_df
 
-closing_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_3.xlsx')
+
+
+new_df = run_pipeline(charges_df)
+
+new_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_3.xlsx')
