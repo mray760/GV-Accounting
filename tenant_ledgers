@@ -40,7 +40,7 @@ def get_openings_df(conn, target_month):
     """)
     opening_df = pd.read_sql(sql, conn, params={"prior": prior})
 
-    opening_df["opening_balance"] = opening_df["outstanding_amount"].fillna(0).astype(int)
+    opening_df["opening_balance"] = opening_df["outstanding_balance"].fillna(0).astype(int)
     return opening_df
 
 
@@ -85,17 +85,24 @@ def merge_and_calc(opening_df,closing_df):
         "outstanding_amount": "outstanding_amount_new",
         "outstanding balance": "outstanding_balance_new"
             })
-    closing_df_renamed.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/balance_test_3.xlsx')
 
     #merge df
     merged_df = pd.merge(opening_df, closing_df_renamed, on='unit_number', how="inner")
-    col_index = merged_df.columns.get_loc("opening_balance")
+    merged_df = merged_df[[ 'unit_number', 'opening_balance',
+                   'tenant', 'Period_y', 'description_new', 'monthly_rate_new',
+                   'late_fees_charge_new', 'late_fees_payment_new', 'cash_payment_new',
+                   'write_off_new', 'credit_new', 'auction_new', 'outstanding_amount_new',
+                   'outstanding_balance_new']]
+
+    col_index = merged_df.columns.get_loc("unit_number")
     df = merged_df.iloc[:, col_index:]
 
 
     #calculate ending balances
     df['outstanding_balances_2'] = df['opening_balance'].fillna(0) + df['monthly_rate_new'].fillna(0) - df['cash_payment_new'].fillna(0) + df['late_fees_charge_new'].fillna(0) - df[
         'late_fees_payment_new'].fillna(0) - df['credit_new'].fillna(0) - df['write_off_new'].fillna(0) - df['auction_new'].fillna(0)
+
+    df = df[['tenant', 'unit_number', 'Period_y', 'description_new', 'opening_balance','monthly_rate_new','cash_payment_new','late_fees_charge_new','late_fees_payment_new','write_off_new','auction_new','outstanding_balances_2']]
 
     new_df = df
 
@@ -107,6 +114,18 @@ def run_pipeline(charges_df):
     opening_df = get_openings_df(conn=engine,target_month=current_period)
     closing_df = create_closing_df(charges_df)
     merged_df = merge_and_calc(opening_df,closing_df)
+    merged_df = merged_df.rename(columns = {
+        "Period_y": "Period",
+        "description_new": "description",
+        "monthly_rate_new": "monthly_rate",
+        "late_fees_charge_new": "late_fees_charge",
+        "late_fees_payment_new": "late_fees_payment",
+        "cash_payment_new": "cash_payment",
+        "write_off_new": "write_off",
+        "credit_new": "credit",
+        "auction_new": "auction",
+        "outstanding_balances_2": "outstanding_balance"
+    })
     return merged_df
 
 
