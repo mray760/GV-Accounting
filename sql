@@ -14,8 +14,9 @@ PWD  = "Uhglbk5478!"
 # Basic (no SSL)
 engine = create_engine(f"mysql+pymysql://{USER}:{PWD}@{HOST}:{PORT}/{DB}",
                        pool_pre_ping=True)
+charges_df['opening_balance'] = 0
 
-charges_df = charges_df[['Period','tenant_name','unit_number','monthly_rate','cash_payment','late_fees_charge','late_fees_payment','credit','write_off','auction','outstanding_balance']]
+charges_df = charges_df[['Period','tenant_name','unit_number','opening_balance','monthly_rate','cash_payment','late_fees_charge','late_fees_payment','credit','write_off','auction','outstanding_balance']]
 
 charges_df.to_sql("monthly_balances_test_1", engine, if_exists="append",
           index=False, chunksize=1000, method="multi")
