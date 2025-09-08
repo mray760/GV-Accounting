@@ -1,8 +1,8 @@
 # Define GL Codes
 GL_CODE_MAP = {
     #Asset
-    'Cash': '15110',
-    'Accounts Receivable': '16110',
+    'Cash': '1511',
+    'Accounts Receivable': '1512',
     'PP&E': '15745',
 
 
@@ -13,7 +13,7 @@ GL_CODE_MAP = {
 
 
     #Income/Expense
-    'Storage Revenue': '15120',
+    'Storage Revenue': '1612',
     'Miscellaneous Expense': '18501',
     'Vendor Expense': '19506',
     'Supplies Expense': '19510',
