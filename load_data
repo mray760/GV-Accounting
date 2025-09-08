@@ -3,17 +3,16 @@ import pandas as pd
 
 
 # Load both sheets from Excel
-def load_data(excel_file):
-    charges_df = pd.read_excel(excel_file, sheet_name='charges_and_payments')
-    charges_df = charges_df[charges_df['unit_status'] == 'Occupied']
-    charges_df["Period"] = pd.to_datetime(charges_df["Period"], format="%Y-%m")
-    charges_df['outstanding_amount'] = charges_df['monthly_rate'].fillna(0)  - charges_df['cash_payment'].fillna(0)
-    charges_df['net_charge'] = charges_df['monthly_rate'].fillna(0) - charges_df['cash_payment'].fillna(0)
-    charges_df['tenant_name'] = charges_df['tenant_name'].fillna('empty')
-    charges_df['outstanding_balance'] = charges_df['monthly_rate'].fillna(0) - charges_df['cash_payment'].fillna(0) + charges_df[
-        'late_fees_charge'].fillna(0) - charges_df['late_fees_payment'].fillna(0) - charges_df['credit'].fillna(0) - charges_df[
-                                   'write_off'].fillna(0) - charges_df['auction'].fillna(0)
+def load_tran_data(excel_file):
     transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
     transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
-    #charges_df['date'] = pd.to_datetime(charges_df['date'], errors='coerce')
-    return charges_df, transactions_df
+    transactions_df['period'] = pd.to_datetime(transactions_df['date']).dt.strftime('%m/%Y')
+
+    return transactions_df
+
+def load_yardi_data(yardi_file):
+    df = pd.read_excel(yardi_file, parse_dates=['period'])
+    df['period'] = pd.to_datetime(df['period']).dt.strftime('%m/%Y')
+    df["gl_code"] = df["gl_code"].astype(int)
+    print(df)
+    return df
