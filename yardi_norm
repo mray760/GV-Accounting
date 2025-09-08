@@ -1,0 +1,11 @@
+import pandas as pd
+from COA import GL_CODE_MAP
+
+
+def normalize_raw_yardi(yardi_df):
+    df = yardi_df
+    code_to_desc = {int(v): k for k, v in GL_CODE_MAP.items()}
+    df["account"] = df["gl_code"].map(code_to_desc)
+
+
+    return df
