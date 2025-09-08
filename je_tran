@@ -782,5 +782,4 @@ def create_journal_from_transactions(transactions):
                 'description': f"Chase Bank Credit - {row['description']}",
                 'tenant': None
             })
-
     return pd.DataFrame(journal)
