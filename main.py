@@ -2,51 +2,31 @@ import pandas as pd
 from je_charge import create_journal_from_charges
 from je_tran import create_journal_from_transactions
 from income_statement import create_income_statement
-from load_excel import load_data
+from load_excel import load_tran_data, load_yardi_data
+from yardi_norm import normalize_raw_yardi
 
-filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
+tran_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
+yardi_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/yardi_tran_test.xlsx'
 
 
 
 # Combine tenant and expense entries into one journal
-def create_general_journal(charges_df, transactions_df):
-    journal_charges = create_journal_from_charges(charges_df)
-    journal_charges.to_excel('/Users/mattray/Desktop/texting.xlsx')
+def create_general_journal(yardi_df, transactions_df):
     journal_transactions = create_journal_from_transactions(transactions_df)
-    return pd.concat([journal_charges, journal_transactions], ignore_index=True)
-
-# Create tenant ledgers
-def create_tenant_ledgers(transactions):
-    ledger = []
-
-    for _, row in transactions.iterrows():
-        ledger.append({
-            'tenant': row['tenant_name'],
-            'unit_number': row['unit_number'],
-            'Period': row['Period'],
-            'description': row['description'],
-            'monthly_rate': row['monthly_rate'],
-            'late_fees_charge': row['late_fees_charge'],
-            'late_fees_payment': row['late_fees_payment'],
-            'cash_payment': row['cash_payment'],
-            'write_off': row['write_off'],
-            'credit': row['credit'],
-            'auction': row['auction']
-
-        })
-
-    df = pd.DataFrame(ledger)
-    df['outstanding_amount'] = df['monthly_rate'].fillna(0)  - df['cash_payment'].fillna(0) + df['late_fees_charge'].fillna(0) - df['late_fees_payment'].fillna(0) - df['credit'].fillna(0) - df['write_off'].fillna(0) - df['auction'].fillna(0)
-    df['outstanding balance'] = df.groupby('unit_number')['outstanding_amount'].cumsum()
+    journal_transactions["gl_code"] = journal_transactions["gl_code"].astype(int)
+    yardi_entries = normalize_raw_yardi(yardi_df)
+    df = pd.concat([yardi_entries, journal_transactions], ignore_index=True)
+    df = df.drop(['date','tenant'],axis = 1)
     return df
+
 
 # GL Ledger
 def create_gl_ledgers(general_journal):
-    return general_journal.sort_values(by=['gl_code'])
+    return general_journal
 
 # Trial Balance
 def create_trial_balance(general_journal):
-    tb = general_journal.groupby(['gl_code', 'account']).agg(
+    tb = general_journal.groupby(['gl_code','account']).agg(
         total_debit=('debit', 'sum'),
         total_credit=('credit', 'sum')
     ).reset_index()
@@ -54,23 +34,22 @@ def create_trial_balance(general_journal):
     return tb
 
 # Save to Excel
-def save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, income_statement, output_file):
+def save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, output_file):
     with pd.ExcelWriter(output_file) as writer:
         general_journal.to_excel(writer, sheet_name='General Journal', index=False)
-        tenant_ledgers.to_excel(writer, sheet_name='Tenant Ledgers', index=False)
         gl_ledgers.to_excel(writer, sheet_name='GL Ledgers', index=False)
         trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
         income_statement.to_excel(writer,sheet_name='Income Statement',index=False)
 
 # Run full accounting pipeline
-def run_accounting_pipeline(excel_input, output_file):
-    charges_df, transactions_df = load_data(excel_input)
-    general_journal = create_general_journal(charges_df, transactions_df)
-    tenant_ledgers = create_tenant_ledgers(charges_df)
+def run_accounting_pipeline(excel_input, yardi_input, output_file):
+    transactions_df = load_tran_data(excel_input)
+    yardi_df = load_yardi_data(yardi_input)
+    general_journal = create_general_journal(yardi_df, transactions_df)
     gl_ledgers = create_gl_ledgers(general_journal)
     trial_balance = create_trial_balance(general_journal)
     income_statement = create_income_statement(trial_balance)
-    save_to_excel(general_journal, tenant_ledgers, gl_ledgers, trial_balance, income_statement, output_file)
+    save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, output_file)
 
 # Example run:
-run_accounting_pipeline(excel_input = filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+run_accounting_pipeline(excel_input = tran_filepath, yardi_input= yardi_filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
