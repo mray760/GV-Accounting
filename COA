@@ -3,13 +3,14 @@ GL_CODE_MAP = {
     #Asset
     'Cash': '1511',
     'Accounts Receivable': '1512',
-    'PP&E': '15745',
+    'PP&E': '1574',
 
 
 
     #Liability
-    'Unearned Rent': '16578',
-    'Credit Card': '17859',
+    'Unearned Rent': '2210',
+    'Credit Card': '1785',
+    'Tenant Deposit': '2270',
 
 
     #Income/Expense
@@ -20,7 +21,7 @@ GL_CODE_MAP = {
     'Utilities Expense': '17105',
     'Maintenance Expense': '19502',
     'Property Tax': '17205',
-    'Bad Debt Expense': '16320',
+    'Bad Debt Expense': '4470',
     'Storage Revenue - Late Fees': '19403',
     'Storage Revenue - Auction': '19405',
     'Storage Revenue - Tenant Credits': '19406',
@@ -29,8 +30,10 @@ GL_CODE_MAP = {
 
 
     #Equity
-    'capital-pt':'50070',
-    'capital-rc':'50075',
-    'withdrawal-pt':'50085',
-    'withdrawal-rc':'50080'
+    'capital-pt':'5005',
+    'capital-rc':'5006',
+    'withdrawal-pt':'5007',
+    'withdrawal-rc':'5008',
+    'Cash Transfers': '5009',
+    'Suspense': '1320'
 }
