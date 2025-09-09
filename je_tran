@@ -782,4 +782,50 @@ def create_journal_from_transactions(transactions):
                 'description': f"Chase Bank Credit - {row['description']}",
                 'tenant': None
             })
+
+        ###### Transfers
+        if row['cash_amount'] > 0 and row['account'] == 'transfer':
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash Transfers',
+                'gl_code': GL_CODE_MAP['Cash Transfers'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+
+        if row['cash_amount'] < 0 and row['account'] == 'transfer':
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash Transfers',
+                'gl_code': GL_CODE_MAP['Cash Transfers'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+
     return pd.DataFrame(journal)
