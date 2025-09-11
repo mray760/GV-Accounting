@@ -1,11 +1,10 @@
 import pandas as pd
-from je_charge import create_journal_from_charges
 from je_tran import create_journal_from_transactions
 from income_statement import create_income_statement
 from load_excel import load_tran_data, load_yardi_data
 from yardi_norm import normalize_raw_yardi
 
-tran_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/gv_tran_test.xlsx'
+tran_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.xlsx'
 yardi_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/yardi_tran_test.xlsx'
 
 
