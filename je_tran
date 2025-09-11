@@ -828,4 +828,51 @@ def create_journal_from_transactions(transactions):
                 'tenant': None
             })
 
+
+    ########## Suspense
+            ###### Transfers
+        if row['cash_amount'] > 0 and row['account'] == 'suspense':
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Suspense - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Suspense',
+                'gl_code': GL_CODE_MAP['Suspense'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Suspense - {row['description']}",
+                'tenant': None
+            })
+
+        if row['cash_amount'] < 0 and row['account'] == 'suspense':
+            # Credit: Cash
+            journal.append({
+                'date': row['date'],
+                'account': 'Suspense',
+                'gl_code': GL_CODE_MAP['Suspense'],
+                'debit': 0,
+                'credit': abs(row['cash_amount']),
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+            # Debit: Credit Card
+            journal.append({
+                'date': row['date'],
+                'account': 'Cash',
+                'gl_code': GL_CODE_MAP['Cash'],
+                'debit': abs(row['cash_amount']),
+                'credit': 0,
+                'description': f"Cash Transfer - {row['description']}",
+                'tenant': None
+            })
+
     return pd.DataFrame(journal)
