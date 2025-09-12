@@ -7,15 +7,24 @@ from yardi_norm import normalize_raw_yardi
 tran_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/gv_tran_prod.xlsx'
 yardi_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Test/yardi_tran_test.xlsx'
 
-
+from_period = '08-2025'
+to_period = '08-2025'
 
 # Combine tenant and expense entries into one journal
 def create_general_journal(yardi_df, transactions_df):
     journal_transactions = create_journal_from_transactions(transactions_df)
     journal_transactions["gl_code"] = journal_transactions["gl_code"].astype(int)
+    journal_transactions['period'] = (
+        pd.to_datetime(journal_transactions['date'], errors='coerce')
+            .dt.strftime('%m/%Y')
+    )
+    journal_transactions.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/yardi_journal_tran.xlsx')
+
     yardi_entries = normalize_raw_yardi(yardi_df)
     df = pd.concat([yardi_entries, journal_transactions], ignore_index=True)
-    df = df.drop(['date','tenant'],axis = 1)
+    df = df.drop(['tenant'],axis = 1)
+    df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/df_concat.xlsx')
+
     return df
 
 
