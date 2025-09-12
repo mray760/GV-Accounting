@@ -6,7 +6,7 @@ import pandas as pd
 def load_tran_data(excel_file):
     transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
     transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
-    transactions_df['period'] = pd.to_datetime(transactions_df['date']).dt.strftime('%m/%Y')
+    transactions_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/load_tran.xlsx')
 
     return transactions_df
 
@@ -14,5 +14,5 @@ def load_yardi_data(yardi_file):
     df = pd.read_excel(yardi_file, parse_dates=['period'])
     df['period'] = pd.to_datetime(df['period']).dt.strftime('%m/%Y')
     df["gl_code"] = df["gl_code"].astype(int)
-    print(df)
+
     return df
