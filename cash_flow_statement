@@ -1,0 +1,27 @@
+import pandas as pd
+
+
+
+def create_cf_statement(income_statement, trial_balance):
+
+    ### Operating Cash Flow Statement
+    net_income_df = income_statement[income_statement["account"] == "Net Income"].reset_index(drop=True)
+
+
+    op_reduction_accounts = ['Accounts Receivable']
+    op_increase_accounts = ['Credit Card','Unearned Rent']
+
+    non_cash_revenues = trial_balance[trial_balance['account'].isin(op_reduction_accounts)].copy()
+    non_cash_revenues = non_cash_revenues[['account','Net D/C']]
+    non_cash_revenues['Net D/C'] = non_cash_revenues['Net D/C'].abs()
+
+
+    non_cash_expenses = trial_balance[trial_balance['account'].isin(op_increase_accounts)].copy()
+    non_cash_expenses = non_cash_expenses[['account','Net D/C']]
+    non_cash_expenses['Net D/C'] = non_cash_expenses['Net D/C'].abs()
+
+    print(non_cash_revenues, non_cash_expenses)
+
+
+
+    return net_income_df
