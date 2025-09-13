@@ -16,3 +16,9 @@ def load_yardi_data(yardi_file):
     df["gl_code"] = df["gl_code"].astype(int)
 
     return df
+
+def load_cash_balances(cash_bal_file):
+    df = pd.read_excel(cash_bal_file)
+    df['period'] = pd.to_datetime(df['period']).dt.strftime('%m/%Y')
+
+    return df
