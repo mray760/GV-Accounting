@@ -3,11 +3,13 @@ import pandas as pd
 
 
 # Load both sheets from Excel
-def load_tran_data(excel_file):
+def load_tran_data(excel_file,from_period,to_period):
     transactions_df = pd.read_excel(excel_file, sheet_name='transactions', parse_dates=['date'])
     transactions_df['date'] = pd.to_datetime(transactions_df['date'], errors='coerce')
-    transactions_df.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/Test/load_tran.xlsx')
+    transactions_df['period'] = pd.to_datetime(transactions_df['date']).dt.strftime('%m/%Y')
+    transactions_df = transactions_df[(transactions_df['period'] >= from_period) & (transactions_df['period'] <= to_period)]
 
+    print(transactions_df)
     return transactions_df
 
 def load_yardi_data(yardi_file):
