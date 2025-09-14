@@ -54,7 +54,7 @@ def save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, 
 
 # Run full accounting pipeline
 def run_accounting_pipeline(excel_input, yardi_input, output_file):
-    transactions_df = load_tran_data(excel_input)
+    transactions_df = load_tran_data(excel_input,from_period,to_period)
     yardi_df = load_yardi_data(yardi_input)
     beg_cash_bal = load_cash_balances(cash_bal_filepath,from_period)
     general_journal = create_general_journal(yardi_df, transactions_df)
