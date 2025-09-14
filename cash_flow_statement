@@ -3,7 +3,9 @@ import pandas as pd
 
 
 def create_cf_statement(income_statement, trial_balance,cash_balances):
-
+    num_empty_rows = 2
+    empty_rows = pd.DataFrame(
+        {'account': [None] * num_empty_rows, 'Amount': [None] * num_empty_rows})
 
     ### Operating Cash Flow Statement
     net_income_df = income_statement[income_statement["account"] == "Net Income"].reset_index(drop=True)
@@ -69,16 +71,35 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
     ### Beginning Cash Balances
 
     cash_bal = cash_balances
+    cash_bal['account'] = 'Beginning Cash Balance'
+    cash_bal.drop(columns={'period'})
+    cash_bal.rename(columns = {'ending_balance': 'Amount'}, inplace=True)
+    cash_bal = cash_bal[['account', 'Amount']]
+
 
 
 
     #### Merge All
 
-    merge_all = pd.concat([operating_cf,investing_accounts,financing_accounts])
+    merge_all = pd.concat([operating_cf, empty_rows,investing_accounts, empty_rows,financing_accounts,empty_rows,cash_bal])
+
+
+    change_in_cash = (
+        merge_all.loc[merge_all['account'] == 'Operating Cash Flows', 'Amount'].sum()
+        - merge_all.loc[merge_all['account'] == 'PP&E', 'Amount'].sum()
+        + merge_all.loc[merge_all['account'].isin(['capital-pt','capital-rc']), "Amount"].sum()
+    )
+    merge_all.loc[len(merge_all) +1] = ["Change in Cash Flows", change_in_cash]
+
+
+    ending_cash_bal = merge_all.loc[merge_all['account'] == 'Beginning Cash Balance', 'Amount'] .sum() + merge_all.loc[merge_all['account'] == 'Change in Cash Flows', 'Amount'].sum()
+
+
+    merge_all.loc[len(merge_all) +2] = ["Ending Cash Balance", ending_cash_bal]
+
+    final_cf = merge_all
 
     print(merge_all)
 
-    print()
-    print(cash_bal)
 
-    return operating_cf
+    return final_cf
