@@ -2,7 +2,8 @@ import pandas as pd
 
 
 
-def create_cf_statement(income_statement, trial_balance):
+def create_cf_statement(income_statement, trial_balance,cash_balances):
+
 
     ### Operating Cash Flow Statement
     net_income_df = income_statement[income_statement["account"] == "Net Income"].reset_index(drop=True)
@@ -17,13 +18,13 @@ def create_cf_statement(income_statement, trial_balance):
 
     non_cash_revenues = trial_balance[trial_balance['account'].isin(op_reduction_accounts)].copy()
     non_cash_revenues = non_cash_revenues[['account','Net D/C']]
-    non_cash_revenues['Amount'] = non_cash_revenues['Net D/C'].abs()
+    non_cash_revenues['Amount'] = non_cash_revenues['Net D/C']
     non_cash_revenues.drop(columns='Net D/C',inplace=True)
 
 
     non_cash_expenses = trial_balance[trial_balance['account'].isin(op_increase_accounts)].copy()
     non_cash_expenses = non_cash_expenses[['account','Net D/C']]
-    non_cash_expenses['Amount'] = non_cash_expenses['Net D/C'].abs()
+    non_cash_expenses['Amount'] = non_cash_expenses['Net D/C']
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
     print(non_cash_revenues)
@@ -36,14 +37,48 @@ def create_cf_statement(income_statement, trial_balance):
 
     total_value = (
             merged_df.loc[merged_df["account"] == "Net Income", "Amount"].sum()
-            + merged_df.loc[merged_df["account"] == "Unearned Rent", "Amount"].sum()
-            + merged_df.loc[merged_df["account"] == "Credit Card", "Amount"].sum()
+            - merged_df.loc[merged_df["account"] == "Unearned Rent", "Amount"].sum()
+            - merged_df.loc[merged_df["account"] == "Credit Card", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Accounts Receivable", "Amount"].sum()
     )
 
-    merged_df.loc[len(merged_df)] = ["Total", total_value]
-    print(merged_df)
+    merged_df.loc[len(merged_df)] = ["Operating Cash Flows", total_value]
+
+    operating_cf = merged_df
+
+
+    #### Investing
+
+    investing_accounts = trial_balance[trial_balance['account'] == 'PP&E'].copy()
+    investing_accounts = investing_accounts[['account','Net D/C']]
+    investing_accounts['Amount'] = investing_accounts['Net D/C'].abs()
+    investing_accounts.drop(columns={'Net D/C'}, inplace=True)
 
 
 
-    return net_income_df
+
+
+    ### Financing
+
+    financing_accounts = trial_balance[trial_balance['account'].isin(['capital-pt','capital-rc'])].copy()
+    financing_accounts = financing_accounts[['account','Net D/C']]
+    financing_accounts['Amount'] = financing_accounts['Net D/C'].abs()
+    financing_accounts.drop(columns={'Net D/C'}, inplace=True)
+
+
+    ### Beginning Cash Balances
+
+    cash_bal = cash_balances
+
+
+
+    #### Merge All
+
+    merge_all = pd.concat([operating_cf,investing_accounts,financing_accounts])
+
+    print(merge_all)
+
+    print()
+    print(cash_bal)
+
+    return operating_cf
