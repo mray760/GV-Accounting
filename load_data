@@ -17,8 +17,14 @@ def load_yardi_data(yardi_file):
 
     return df
 
-def load_cash_balances(cash_bal_file):
+def load_cash_balances(cash_bal_file,start_period):
     df = pd.read_excel(cash_bal_file)
     df['period'] = pd.to_datetime(df['period']).dt.strftime('%m/%Y')
+
+    prior_period = (
+            pd.to_datetime(start_period, format="%m/%Y") - pd.DateOffset(months=1)
+    ).strftime("%m/%Y")
+
+    df = df[df['period'] == prior_period]
 
     return df
