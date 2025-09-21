@@ -31,8 +31,41 @@ def read_periods(bucket: str, base_prefix: str, periods: list[str]) -> pd.DataFr
 
 
 
-df = read_periods(bucket=BUCKET,base_prefix=base_prefix,periods=['08/2025'])
+#df = read_periods(bucket=BUCKET,base_prefix=base_prefix,periods=['08/2025'])
 
-print("read preiods",df)
+def load_S3_data(periods,bucket=BUCKET,base_prefix= base_prefix):
+    aws_df = read_periods(bucket = bucket, base_prefix=base_prefix,periods=periods)
+    transactions_df = aws_df.copy()
+    transactions_df = transactions_df[['date','cash_amount','credit_amount', 'description','account']]
+    transactions_df['date'] = pd.to_datetime(transactions_df['date'], format="%m/%d/%y", errors='coerce')
+    transactions_df['period'] = pd.to_datetime(transactions_df['date']).dt.strftime('%m/%Y')
+    #### Convert to Float
+    transactions_df['credit_amount'] = (
+        transactions_df['credit_amount']
+            .astype(str).str.replace(',', '', regex=False).str.strip()
+    ).pipe(pd.to_numeric, errors='coerce').fillna(0.0)
+
+    transactions_df['cash_amount'] = (
+        transactions_df['cash_amount']
+            .astype(str).str.replace(',', '', regex=False).str.strip()
+    ).pipe(pd.to_numeric, errors='coerce').fillna(0.0)
+
+
+    ### Fill NA
+    transactions_df['cash_amount'] = transactions_df['cash_amount'].fillna(0)
+    transactions_df['credit_amount'] = transactions_df['credit_amount'].fillna(0)
+
+    return transactions_df
+
+
+
+
+
+
+
+
+
+
+
 
 
