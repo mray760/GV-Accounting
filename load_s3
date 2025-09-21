@@ -1,0 +1,38 @@
+import s3fs
+import pandas as pd
+
+BUCKET = "mvsgvtest"
+
+URI = 's3://mvsgvtest/bank_credit_transactions/reconciled/08.2025.csv'
+base_prefix = 'bank_credit_transactions'
+fs = s3fs.S3FileSystem()
+
+
+def read_periods(bucket: str, base_prefix: str, periods: list[str]) -> pd.DataFrame:
+
+    df_list = []
+    for p in periods:
+        p = p.replace("/", ".")
+        print(p)
+        pattern = (f"s3://{bucket}/{base_prefix}/reconciled/{p}.csv")
+        print(pattern)
+        with fs.open(pattern, "r") as f:
+            df =  pd.read_csv(f)
+        df_list.append(df)
+
+        # If no files were found, return an empty DataFrame
+        if not df_list:
+            return pd.DataFrame()
+
+        # Combine all DataFrames into one
+        combined = pd.concat(df_list, ignore_index=True)
+
+        return combined
+
+
+
+df = read_periods(bucket=BUCKET,base_prefix=base_prefix,periods=['08/2025'])
+
+print("read preiods",df)
+
+
