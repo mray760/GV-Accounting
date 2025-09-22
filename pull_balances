@@ -1,0 +1,25 @@
+import s3fs
+import pandas as pd
+
+BUCKET = "mvsgvtest"
+
+URI = 's3://mvsgvtest/bank_credit_transactions/reconciled/08.2025.csv'
+base_prefix = 'balances'
+fs = s3fs.S3FileSystem()
+
+
+def read_balances(periods,bucket = BUCKET, base_prefix = base_prefix):
+
+    for p in periods:
+        p = p.replace("/", ".")
+        print(p)
+        pattern = (f"s3://{bucket}/{base_prefix}/period={p}/balances.csv")
+        print(pattern)
+        with fs.open(pattern, "r") as f:
+            df =  pd.read_csv(f)
+
+        return df
+
+df = read_balances(periods=['08.2025'])
+
+print(df)
