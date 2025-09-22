@@ -10,11 +10,21 @@ from pull_balances import read_beg_balances
 from pop_ups import confirm_run
 
 
+###Parameters
+run_monthly_load_balance = False
 from_period = '08/2025'
 to_period = '08/2025'
 
-run_monthly_load_balance = False
-run_accounting_pipeline = True
+
+### caclulate periods
+all_periods = pd.date_range("2025-01-01", "2025-12-01", freq="MS").strftime("%m/%Y").tolist()
+start, end = from_period, to_period
+selected_periods = all_periods[all_periods.index(start): all_periods.index(end)+1]
+
+print("Selected periods:", selected_periods)
+
+
+
 
 
 # Combine tenant and expense entries into one journal
@@ -74,10 +84,10 @@ def save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, 
         operating_cf.to_excel(writer,sheet_name='Operating CF', index=False)
 
 # Run full accounting pipeline
-def run_accounting_pipeline(excel_input, yardi_input, output_file):
+def run_accounting_pipeline(output_file):
     beg_bal = read_beg_balances(period = from_period)
-    transactions_df = load_S3_data(periods= ['08/2025'])
-    yardi_df = load_S3_yardi(periods= ['08/2025'])
+    transactions_df = load_S3_data(periods= selected_periods)
+    yardi_df = load_S3_yardi(periods= selected_periods)
     general_journal = create_general_journal(yardi_df, transactions_df)
     gl_ledgers = create_gl_ledgers(general_journal)
     trial_balance = create_trial_balance(general_journal,beg_bal,from_period,to_period)
@@ -88,9 +98,9 @@ def run_accounting_pipeline(excel_input, yardi_input, output_file):
     return trial_balance
 
 
-# Example run:
 
-tb = run_accounting_pipeline(excel_input = tran_filepath, yardi_input= yardi_filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+
+tb = run_accounting_pipeline(output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
 
 if run_monthly_load_balance == True:
     if confirm_run():
@@ -100,3 +110,5 @@ if run_monthly_load_balance == True:
     else:
         print("cancelled")
         pass
+
+
