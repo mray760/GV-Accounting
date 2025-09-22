@@ -10,11 +10,3 @@ def confirm_run():
     root.destroy()   # Clean up
 
     return answer
-
-# Example usage
-if confirm_run():
-    print("Running monthly balances...")
-    # --- put your code here ---
-else:
-    print("Cancelled.")
-    # --- stop execution ---
