@@ -4,6 +4,9 @@ from income_statement import create_income_statement
 from operating_cf import create_cf_statement
 from load_excel import load_tran_data, load_yardi_data, load_cash_balances
 from yardi_norm import normalize_raw_yardi
+from load_s3 import load_S3_data
+from load_s3_Yardi import load_S3_yardi
+from load_balances import write_period_bal, normalize_balances
 
 tran_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/transactions/8.25_transactions.xlsx'
 yardi_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/transactions/8.25_yardi_tran.xlsx'
@@ -11,6 +14,9 @@ cash_bal_filepath = '/Users/mattray/Desktop/GV Accouting/Inputs/Production/cash_
 
 from_period = '08/2025'
 to_period = '08/2025'
+
+run_monthly_load_balance = True
+
 
 # Combine tenant and expense entries into one journal
 def create_general_journal(yardi_df, transactions_df):
@@ -54,8 +60,10 @@ def save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, 
 
 # Run full accounting pipeline
 def run_accounting_pipeline(excel_input, yardi_input, output_file):
-    transactions_df = load_tran_data(excel_input,from_period,to_period)
-    yardi_df = load_yardi_data(yardi_input)
+    transactions_df = load_S3_data(periods= ['08/2025'])
+    #transactions_df = load_tran_data(excel_input,from_period,to_period)
+    yardi_df = load_S3_yardi(periods= ['08/2025'])
+    #yardi_df = load_yardi_data(yardi_input)
     beg_cash_bal = load_cash_balances(cash_bal_filepath,from_period)
     general_journal = create_general_journal(yardi_df, transactions_df)
     gl_ledgers = create_gl_ledgers(general_journal)
@@ -64,6 +72,14 @@ def run_accounting_pipeline(excel_input, yardi_input, output_file):
     operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_cash_bal)
     save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, operating_cf, output_file)
 
+    return trial_balance
+
 
 # Example run:
-run_accounting_pipeline(excel_input = tran_filepath, yardi_input= yardi_filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+tb = run_accounting_pipeline(excel_input = tran_filepath, yardi_input= yardi_filepath,output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+
+if run_monthly_load_balance == True:
+    bal_df = normalize_balances(trial_balance=tb)
+    write_period_bal(period=to_period, tb =bal_df)
+else:
+    pass
