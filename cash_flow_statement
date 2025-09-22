@@ -63,13 +63,13 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
 
     ### Beginning Cash Balances
-    cash_bal = cash_balances[cash_balances['gl_code'] == 1511]
+    cash_bal = cash_balances[cash_balances['gl_code'] == 1511].copy()
 
     cash_bal.drop(columns={'period'})
     cash_bal.rename(columns = {'ending_balance': 'Amount'}, inplace=True)
     cash_bal = cash_bal[['account', 'Amount']]
-    cash_bal['account'] = cash_bal['account'].replace('Cash', 'Beginning Cash Balance')
-    print(cash_bal)
+    cash_bal['account'] = cash_bal['account'].replace('Cash', 'Beginning Cash Balance').copy()
+
 
 
 
