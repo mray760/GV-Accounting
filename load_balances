@@ -1,0 +1,27 @@
+
+import s3fs
+import pandas as pd
+
+BUCKET = "mvsgvtest"
+prefix = 'balances'
+fs = s3fs.S3FileSystem()
+
+def write_period_bal(period, tb, bucket = BUCKET, base_prefix = prefix):
+    def write_csv(df: pd.DataFrame, s3_uri: str) -> None:
+        """Write a DataFrame to CSV in S3"""
+        with fs.open(s3_uri, "w") as f:
+            df.to_csv(f, index=False)
+
+    key = f"{base_prefix}/period={period}/balances.csv"
+    s3_uri = f"s3://{bucket}/{key}"
+    write_csv(tb, s3_uri)
+    return s3_uri
+
+
+def normalize_balances(trial_balance):
+    tb = trial_balance
+    tb = tb.rename(columns = {'Net D/C': 'balance'})
+    tb = tb[['period','gl_code','account','balance']]
+    return tb
+
+
