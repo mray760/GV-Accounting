@@ -1,5 +1,6 @@
 import s3fs
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 
 BUCKET = "mvsgvtest"
 
@@ -8,18 +9,23 @@ base_prefix = 'balances'
 fs = s3fs.S3FileSystem()
 
 
-def read_balances(periods,bucket = BUCKET, base_prefix = base_prefix):
+def read_beg_balances(period,bucket = BUCKET, base_prefix = base_prefix):
+    dt = pd.to_datetime(period, format="%m/%Y")
+    previous_month = dt - relativedelta(months=1)
+    result = previous_month.strftime("%m/%Y")
 
-    for p in periods:
-        p = p.replace("/", ".")
-        print(p)
-        pattern = (f"s3://{bucket}/{base_prefix}/period={p}/balances.csv")
-        print(pattern)
-        with fs.open(pattern, "r") as f:
-            df =  pd.read_csv(f)
+    period = result.replace("/", ".")
 
-        return df
+    pattern = (f"s3://{bucket}/{base_prefix}/period={period}/balances.csv")
 
-df = read_balances(periods=['08.2025'])
+    with fs.open(pattern, "r") as f:
+        df =  pd.read_csv(f)
+
+    df["period"] = pd.to_datetime(df["period"], format="%b-%y").dt.strftime("%m/%Y")
+
+
+    return df
+
+df = read_beg_balances(period='08/2025')
 
 print(df)
