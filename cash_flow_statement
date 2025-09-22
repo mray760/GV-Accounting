@@ -11,9 +11,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
     net_income_df = income_statement[income_statement["account"] == "Net Income"].reset_index(drop=True)
     net_income_df.drop(columns='Type', inplace=True)
 
-    print(net_income_df)
 
-    print()
 
     op_reduction_accounts = ['Accounts Receivable']
     op_increase_accounts = ['Credit Card','Unearned Rent']
@@ -29,11 +27,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
     non_cash_expenses['Amount'] = non_cash_expenses['Net D/C']
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
-    print(non_cash_revenues)
 
-    print()
-
-    print(non_cash_expenses)
 
     merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues])
 
@@ -69,12 +63,13 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
 
     ### Beginning Cash Balances
+    cash_bal = cash_balances[cash_balances['gl_code'] == 1511]
 
-    cash_bal = cash_balances
-    cash_bal['account'] = 'Beginning Cash Balance'
     cash_bal.drop(columns={'period'})
     cash_bal.rename(columns = {'ending_balance': 'Amount'}, inplace=True)
     cash_bal = cash_bal[['account', 'Amount']]
+    cash_bal['account'] = cash_bal['account'].replace('Cash', 'Beginning Cash Balance')
+    print(cash_bal)
 
 
 
@@ -99,7 +94,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
     final_cf = merge_all
 
-    print(merge_all)
+
 
 
     return final_cf
