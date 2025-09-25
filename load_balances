@@ -17,15 +17,13 @@ def write_period_bal(period, tb, bucket = BUCKET, base_prefix = prefix):
     key = f"{base_prefix}/period={period}/balances.csv"
     s3_uri = f"s3://{bucket}/{key}"
     write_csv(tb, s3_uri)
-    print("wrote to S3")
+    print("Successfully wrote to S3")
     return s3_uri
 
 
 def normalize_balances(trial_balance):
     tb = trial_balance.copy()
-    print(tb)
     tb.rename(columns = {'ending_balance': 'balance', 'to_period': 'period'}, inplace=True)
-    print(tb)
     tb = tb[['period','gl_code','account','balance']]
     return tb
 
