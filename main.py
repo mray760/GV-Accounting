@@ -3,15 +3,16 @@ from je_tran import create_journal_from_transactions
 from income_statement import create_income_statement
 from operating_cf import create_cf_statement
 from yardi_norm import normalize_raw_yardi
-from load_s3 import load_S3_data
-from load_s3_Yardi import load_S3_yardi
+from Pull_S3_Bank import load_S3_data
+from Pull_S3_Yardi import load_S3_yardi
 from load_balances import write_period_bal, normalize_balances
 from pull_balances import read_beg_balances
 from pop_ups import confirm_run
+from to_excel import save_to_excel
 
 
 ###Parameters
-run_monthly_load_balance = True
+run_monthly_load_balance = False
 from_period = '08/2025'
 to_period = '08/2025'
 
@@ -74,14 +75,6 @@ def create_trial_balance(general_journal,beg_bal,from_period,to_period):
 
     return tb
 
-# Save to Excel
-def save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, operating_cf, output_file):
-    with pd.ExcelWriter(output_file) as writer:
-        general_journal.to_excel(writer, sheet_name='General Journal', index=False)
-        gl_ledgers.to_excel(writer, sheet_name='GL Ledgers', index=False)
-        trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
-        income_statement.to_excel(writer,sheet_name='Income Statement',index=False)
-        operating_cf.to_excel(writer,sheet_name='Operating CF', index=False)
 
 # Run full accounting pipeline
 def run_accounting_pipeline(output_file):
@@ -89,11 +82,10 @@ def run_accounting_pipeline(output_file):
     transactions_df = load_S3_data(periods= selected_periods)
     yardi_df = load_S3_yardi(periods= selected_periods)
     general_journal = create_general_journal(yardi_df, transactions_df)
-    gl_ledgers = create_gl_ledgers(general_journal)
     trial_balance = create_trial_balance(general_journal,beg_bal,from_period,to_period)
     income_statement = create_income_statement(trial_balance)
     operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal)
-    save_to_excel(general_journal, gl_ledgers, trial_balance, income_statement, operating_cf, output_file)
+    save_to_excel(general_journal,trial_balance, income_statement, operating_cf, output_file)
 
     return trial_balance
 
