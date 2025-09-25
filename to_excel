@@ -1,0 +1,25 @@
+import pandas as pd
+
+
+def save_to_excel(general_journal, trial_balance, income_statement, operating_cf, output_file):
+    with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
+        general_journal.to_excel(writer, sheet_name='General Journal', index=False)
+        trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
+        income_statement.to_excel(writer,sheet_name='Income Statement',index=False)
+        operating_cf.to_excel(writer,sheet_name='Operating CF', index=False)
+
+        # ---- Formatting for Trial Balance ----
+        workbook = writer.book
+        worksheet = writer.sheets["Trial Balance"]
+
+        # Auto-fit column widths
+        for i, col in enumerate(trial_balance.columns):
+            max_len = max(
+                trial_balance[col].astype(str).map(len).max(),  # longest cell
+                len(col)  # header length
+            ) + 2
+            worksheet.set_column(i, i, max_len)
+
+        # Apply accounting-style number format (commas + 2 decimals) for cols E–I
+        money_fmt = workbook.add_format({'num_format': '#,##0.00'})
+        worksheet.set_column(4, 8, None, money_fmt)  # E=4, I=8
