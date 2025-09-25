@@ -11,7 +11,7 @@ from pop_ups import confirm_run
 
 
 ###Parameters
-run_monthly_load_balance = False
+run_monthly_load_balance = True
 from_period = '08/2025'
 to_period = '08/2025'
 
@@ -109,6 +109,6 @@ if run_monthly_load_balance == True:
         write_period_bal(period=to_period, tb =bal_df)
     else:
         print("cancelled")
-        pass
+
 
 
