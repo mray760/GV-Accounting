@@ -14,7 +14,7 @@ from to_excel import save_to_excel
 ###Parameters
 run_monthly_load_balance = False
 from_period = '08/2025'
-to_period = '08/2025'
+to_period = '09/2025'
 
 
 ### caclulate periods
@@ -57,7 +57,7 @@ def create_trial_balance(general_journal,beg_bal,from_period,to_period):
     tb['Net D/C'] = tb['total_debit'] - tb['total_credit']
 
 
-    beg = beg_bal.rename(columns={'ending_balance': 'beginning_balance',
+    beg = beg_bal.rename(columns={'balance': 'beginning_balance',
                                   'period': '_beg_period'})
 
     tb = tb.merge(beg[['gl_code', 'account', 'beginning_balance']],
@@ -91,8 +91,9 @@ def run_accounting_pipeline(output_file):
 
 
 
+excel_period = to_period.replace('/', '.')
 
-tb = run_accounting_pipeline(output_file = '/Users/mattray/Desktop/GV Accouting/Outputs/accounting_output_5.xlsx')
+tb = run_accounting_pipeline(output_file = fr'/Users/mattray/Desktop/GV Accouting/Outputs/accounting_{excel_period}.xlsx')
 
 if run_monthly_load_balance == True:
     if confirm_run():
