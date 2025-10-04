@@ -13,27 +13,26 @@ def read_periods(bucket: str, base_prefix: str, periods: list[str]) -> pd.DataFr
     df_list = []
     for p in periods:
         p = p.replace("/", ".")
-        print(p)
         pattern = (f"s3://{bucket}/{base_prefix}/reconciled/{p}.csv")
-        print(pattern)
         with fs.open(pattern, "r") as f:
             df =  pd.read_csv(f)
         df_list.append(df)
 
         # If no files were found, return an empty DataFrame
-        if not df_list:
-            return pd.DataFrame()
+    if not df_list:
+        print("No files were located")
+        return pd.DataFrame()
 
-        # Combine all DataFrames into one
-        combined = pd.concat(df_list, ignore_index=True)
+    # Combine all DataFrames into one
+    combined = pd.concat(df_list, ignore_index=True)
 
-        return combined
+    return combined
 
 
 
 #df = read_periods(bucket=BUCKET,base_prefix=base_prefix,periods=['08/2025'])
 
-def load_S3_data(periods,bucket=BUCKET,base_prefix= base_prefix):
+def load_S3_yardi(periods,bucket=BUCKET,base_prefix= base_prefix):
     aws_df = read_periods(bucket = bucket, base_prefix=base_prefix,periods=periods)
     aws_df['period'] = pd.to_datetime(aws_df['period'], format="%m/%d/%y", errors='coerce')
     aws_df['period'] = pd.to_datetime(aws_df['period']).dt.strftime('%m/%Y')
@@ -51,6 +50,4 @@ def load_S3_data(periods,bucket=BUCKET,base_prefix= base_prefix):
 
     return aws_df
 
-df = load_S3_data(periods=['08/2025'])
 
-print(df)
