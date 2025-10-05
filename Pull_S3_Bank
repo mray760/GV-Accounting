@@ -1,5 +1,6 @@
 import s3fs
 import pandas as pd
+from functions import _parse_mdy_mixed
 
 BUCKET = "mvsgvtest"
 
@@ -27,6 +28,7 @@ def read_periods(bucket: str, base_prefix: str, periods: list[str]) -> pd.DataFr
 
     # Combine all DataFrames into one
     combined = pd.concat(df_list, ignore_index=True)
+    combined["date"] = _parse_mdy_mixed(combined['date'])
     combined.to_excel('/Users/mattray/Desktop/GV Accouting/Outputs/accounting_test_output.xlsx', index=False)
 
 
