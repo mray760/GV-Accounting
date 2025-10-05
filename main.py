@@ -13,7 +13,7 @@ from to_excel import save_to_excel
 
 ###Parameters
 run_monthly_load_balance = False
-from_period = '08/2025'
+from_period = '09/2025'
 to_period = '09/2025'
 
 
@@ -84,7 +84,7 @@ def run_accounting_pipeline(output_file):
     general_journal = create_general_journal(yardi_df, transactions_df)
     trial_balance = create_trial_balance(general_journal,beg_bal,from_period,to_period)
     income_statement = create_income_statement(trial_balance)
-    operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal)
+    operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal,general_journal=general_journal)
     save_to_excel(general_journal,trial_balance, income_statement, operating_cf, output_file)
 
     return trial_balance
