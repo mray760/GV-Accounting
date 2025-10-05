@@ -2,10 +2,33 @@ import pandas as pd
 
 
 
-def create_cf_statement(income_statement, trial_balance,cash_balances):
+def create_cf_statement(income_statement, trial_balance,cash_balances,general_journal):
     num_empty_rows = 2
     empty_rows = pd.DataFrame(
         {'account': [None] * num_empty_rows, 'Amount': [None] * num_empty_rows})
+
+    general_journal['Credit'] = general_journal['Credit'].fillna('N')
+
+    ### create credit entries
+    credit_entries = general_journal[general_journal['Credit'] == 'Y']
+    credit_entries = credit_entries[(credit_entries['account'] != 'Cash') & (credit_entries['account'] != 'PP&E') & (credit_entries['account'] != 'Credit Card')]
+    mask = credit_entries["Credit"].eq("Y")
+    total = (credit_entries.loc[mask, "debit"]
+             .astype(str).str.replace(",", "", regex=False)
+             .pipe(pd.to_numeric, errors="coerce")
+             .fillna(0)
+             .sum())
+
+    credit_entries_out = pd.DataFrame({"account": ["Credit Card"], "Amount": [total]})
+
+
+
+
+    ### Oprating Credits
+
+
+
+
 
     ### Operating Cash Flow Statement
     net_income_df = income_statement[income_statement["account"] == "Net Income"].reset_index(drop=True)
@@ -14,7 +37,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
 
     op_reduction_accounts = ['Accounts Receivable']
-    op_increase_accounts = ['Credit Card','Unearned Rent']
+    op_increase_accounts = ['Unearned Rent']
 
     non_cash_revenues = trial_balance[trial_balance['account'].isin(op_reduction_accounts)].copy()
     non_cash_revenues = non_cash_revenues[['account','Net D/C']]
@@ -27,15 +50,17 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
     non_cash_expenses['Amount'] = non_cash_expenses['Net D/C']
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
+    print(non_cash_expenses)
 
 
-    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues])
+
+    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out])
 
     total_value = (
             merged_df.loc[merged_df["account"] == "Net Income", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Unearned Rent", "Amount"].sum()
-            - merged_df.loc[merged_df["account"] == "Credit Card", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Accounts Receivable", "Amount"].sum()
+            + credit_entries.loc[credit_entries['Credit'] == 'Y',"debit"].sum()
     )
 
     merged_df.loc[len(merged_df)] = ["Operating Cash Flows", total_value]
@@ -44,11 +69,26 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
 
     #### Investing
+    non_credit_entries = general_journal[general_journal['Credit'] == 'N']
+    non_credit_entries = non_credit_entries[non_credit_entries['account'] == 'PP&E']
+    mask_1 = non_credit_entries["Credit"].eq("N")
+    total_i = (non_credit_entries.loc[mask_1, "debit"]
+             .astype(str).str.replace(",", "", regex=False)
+             .pipe(pd.to_numeric, errors="coerce")
+             .fillna(0)
+             .sum())
 
-    investing_accounts = trial_balance[trial_balance['account'] == 'PP&E'].copy()
-    investing_accounts = investing_accounts[['account','Net D/C']]
-    investing_accounts['Amount'] = investing_accounts['Net D/C'].abs()
-    investing_accounts.drop(columns={'Net D/C'}, inplace=True)
+    investing_accounts = pd.DataFrame({"account": ["PP&E"], "Amount": [total_i]})
+
+
+
+
+
+
+    #investing_accounts = trial_balance[trial_balance['account'] == 'PP&E'].copy()
+    #investing_accounts = investing_accounts[['account','Net D/C']]
+    #investing_accounts['Amount'] = investing_accounts['Net D/C'].abs()
+    #investing_accounts.drop(columns={'Net D/C'}, inplace=True)
 
 
 
@@ -56,17 +96,32 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
     ### Financing
 
+    credit_repayment = general_journal[general_journal['Credit'] == 'Y']
+    credit_repayment = credit_repayment[credit_repayment['account'] == 'Cash']
+    mask_2 = credit_repayment["Credit"].eq("Y")
+    total_f = (credit_repayment.loc[mask_2, "credit"]
+               .astype(str).str.replace(",", "", regex=False)
+               .pipe(pd.to_numeric, errors="coerce")
+               .fillna(0)
+               .sum())
+    credit_repayment_f = pd.DataFrame({"account": ["Credit Card"], "Amount": [total_f]})
+
+
+
     financing_accounts = trial_balance[trial_balance['account'].isin(['capital-pt','capital-rc'])].copy()
     financing_accounts = financing_accounts[['account','Net D/C']]
     financing_accounts['Amount'] = financing_accounts['Net D/C'].abs()
     financing_accounts.drop(columns={'Net D/C'}, inplace=True)
+
+    financing_accounts_merged = pd.concat([credit_repayment_f,financing_accounts])
+    print(financing_accounts_merged)
 
 
     ### Beginning Cash Balances
     cash_bal = cash_balances[cash_balances['gl_code'] == 1511].copy()
 
     cash_bal.drop(columns={'period'})
-    cash_bal.rename(columns = {'ending_balance': 'Amount'}, inplace=True)
+    cash_bal.rename(columns = {'balance': 'Amount'}, inplace=True)
     cash_bal = cash_bal[['account', 'Amount']]
     cash_bal['account'] = cash_bal['account'].replace('Cash', 'Beginning Cash Balance').copy()
 
@@ -76,12 +131,13 @@ def create_cf_statement(income_statement, trial_balance,cash_balances):
 
     #### Merge All
 
-    merge_all = pd.concat([operating_cf, empty_rows,investing_accounts, empty_rows,financing_accounts,empty_rows,cash_bal])
+    merge_all = pd.concat([operating_cf, empty_rows,investing_accounts, empty_rows,financing_accounts_merged,empty_rows,cash_bal])
 
 
     change_in_cash = (
         merge_all.loc[merge_all['account'] == 'Operating Cash Flows', 'Amount'].sum()
         - merge_all.loc[merge_all['account'] == 'PP&E', 'Amount'].sum()
+        - merge_all.loc[merge_all['account'] == 'Credit Card', 'Amount'].sum()
         + merge_all.loc[merge_all['account'].isin(['capital-pt','capital-rc']), "Amount"].sum()
     )
     merge_all.loc[len(merge_all) +1] = ["Change in Cash Flows", change_in_cash]
