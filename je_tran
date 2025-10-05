@@ -6,6 +6,7 @@ from COA import GL_CODE_MAP
 
 # Generate journal from Transactions
 def create_journal_from_transactions(transactions):
+
     journal = []
     transactions['cash_amount'] = transactions['cash_amount'].fillna(0)
     transactions['credit_amount'] = transactions['credit_amount'].fillna(0)
@@ -93,7 +94,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"{row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -103,7 +105,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"{row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
             ## Property Purchase
@@ -150,28 +153,7 @@ def create_journal_from_transactions(transactions):
                 'description': f"Bad Debt Expense Payment - {row['description']}",
                 'tenant': None
             })
-        ## Bad Debt Expense - Credit
-        if row['credit_amount'] < 0 and row['account'] == 'Bad Debt Expense':
-            # Debit: Bad Debt Expense
-            journal.append({
-                'date': row['date'],
-                'account': 'Bad Debt Expense',
-                'gl_code': GL_CODE_MAP['Bad Debt Expense'],
-                'debit': abs(row['credit_amount']),
-                'credit': 0,
-                'description': f"Bad Debt Expense - {row['description']}",
-                'tenant': None
-            })
-            # Credit: Credit Card
-            journal.append({
-                'date': row['date'],
-                'account': 'Credit Card',
-                'gl_code': GL_CODE_MAP['Credit Card'],
-                'debit': 0,
-                'credit': abs(row['credit_amount']),
-                'description': f"Bad Debt Expense Payment - {row['description']}",
-                'tenant': None
-            })
+
 
         ## Utilities Expense - Cash
         if row['account'] == 'Utilities Expense' and row['cash_amount'] < 0:
@@ -205,7 +187,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Utilities Expense - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -215,7 +198,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Utilities Expense Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ## Property Tax - Cash
@@ -250,7 +234,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Property Tax - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -260,7 +245,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Property Tax Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ## Miscellaneous Expense - Cash
@@ -295,7 +281,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Miscellaneous Expense - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -305,7 +292,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Miscellaneous Expense Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ## Maintenance Expense - Cash
@@ -340,7 +328,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Maintenance Expense - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -350,7 +339,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Maintenance Expense Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit':'Y'
             })
 
         ## Vendor Expense - Cash
@@ -385,7 +375,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Vendor Expense - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -395,7 +386,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Vendor Expense Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ## Supplies Expense - Cash
@@ -430,7 +422,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['credit_amount']),
                 'credit': 0,
                 'description': f"Supplies Expense - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Credit: Credit Card
             journal.append({
@@ -440,7 +433,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['credit_amount']),
                 'description': f"Supplies Expense Payment - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ###### Refunds
@@ -770,7 +764,8 @@ def create_journal_from_transactions(transactions):
                 'debit': 0,
                 'credit': abs(row['cash_amount']),
                 'description': f"Chase Bank Credit - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
             # Debit: Credit Card
             journal.append({
@@ -780,7 +775,8 @@ def create_journal_from_transactions(transactions):
                 'debit': abs(row['cash_amount']),
                 'credit': 0,
                 'description': f"Chase Bank Credit - {row['description']}",
-                'tenant': None
+                'tenant': None,
+                'Credit': 'Y'
             })
 
         ###### Transfers
