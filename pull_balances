@@ -30,5 +30,30 @@ def read_beg_balances(period,bucket = BUCKET, base_prefix = base_prefix):
     )
     df["period"] = df["period"].dt.strftime("%m/%Y")
 
+    bal_df = df
+
+    return bal_df
+
+def read_re_balances(period,bucket = BUCKET, base_prefix = base_prefix):
+    dt = pd.to_datetime(period, format="%m/%Y")
+    previous_month = dt - relativedelta(months=1)
+    result = previous_month.strftime("%m/%Y")
+
+
+    period = result.replace("/", ".")
+
+    pattern = (f"s3://{bucket}/{base_prefix}/period={period}/balances_re.csv")
+
+    with fs.open(pattern, "r") as f:
+        df =  pd.read_csv(f)
+
+    df["period"] = pd.to_datetime(
+        df["period"].astype(str).str.strip(),
+        format="mixed",  # <— NEW: Pandas infers per-element format
+        dayfirst=False,
+        errors="coerce"
+    )
+    df["period"] = df["period"].dt.strftime("%m/%Y")
+
     return df
 
