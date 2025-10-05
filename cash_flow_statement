@@ -50,9 +50,6 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     non_cash_expenses['Amount'] = non_cash_expenses['Net D/C']
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
-    print(non_cash_expenses)
-
-
 
     merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out])
 
@@ -64,6 +61,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     )
 
     merged_df.loc[len(merged_df)] = ["Operating Cash Flows", total_value]
+    merged_df = merged_df.reset_index(drop=True)
 
     operating_cf = merged_df
 
@@ -78,7 +76,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
              .fillna(0)
              .sum())
 
-    investing_accounts = pd.DataFrame({"account": ["PP&E"], "Amount": [total_i]})
+    investing_cf = pd.DataFrame({"account": ["PP&E"], "Amount": [total_i]})
 
 
 
@@ -104,7 +102,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
                .pipe(pd.to_numeric, errors="coerce")
                .fillna(0)
                .sum())
-    credit_repayment_f = pd.DataFrame({"account": ["Credit Card"], "Amount": [total_f]})
+    credit_repayment_f = pd.DataFrame({"account": ["Chase Bank - Repayment"], "Amount": [total_f]})
 
 
 
@@ -113,8 +111,8 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     financing_accounts['Amount'] = financing_accounts['Net D/C'].abs()
     financing_accounts.drop(columns={'Net D/C'}, inplace=True)
 
-    financing_accounts_merged = pd.concat([credit_repayment_f,financing_accounts])
-    print(financing_accounts_merged)
+    financing_cf = pd.concat([credit_repayment_f,financing_accounts])
+
 
 
     ### Beginning Cash Balances
@@ -131,22 +129,42 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
 
     #### Merge All
 
-    merge_all = pd.concat([operating_cf, empty_rows,investing_accounts, empty_rows,financing_accounts_merged,empty_rows,cash_bal])
+    #merge_all = pd.concat([operating_cf, empty_rows,investing_cf, empty_rows,financing_cf,empty_rows,cash_bal])
+
+    # Function to add 'type' only to first row
+    def add_type_column(df, label):
+        df = df.copy()
+        df.insert(0, 'type', '')  # Add empty column on far left
+        df.loc[df.index[0], 'type'] = label  # Assign label to top row only
+        return df
+
+    # Apply to each section
+    operating_cf = add_type_column(operating_cf, 'Operating Cash Flow')
+    investing_cf = add_type_column(investing_cf, 'Investing Cash Flow')
+    financing_cf = add_type_column(financing_cf, 'Financing Cash Flow')
+    #cash_bal = add_type_column(cash_bal,'Cash Balances')
+
+    merge_all = pd.concat([operating_cf, empty_rows, investing_cf, empty_rows, financing_cf, empty_rows, cash_bal])
 
 
     change_in_cash = (
         merge_all.loc[merge_all['account'] == 'Operating Cash Flows', 'Amount'].sum()
         - merge_all.loc[merge_all['account'] == 'PP&E', 'Amount'].sum()
-        - merge_all.loc[merge_all['account'] == 'Credit Card', 'Amount'].sum()
+        - merge_all.loc[merge_all['account'] == 'Chase Bank - Repayment', 'Amount'].sum()
         + merge_all.loc[merge_all['account'].isin(['capital-pt','capital-rc']), "Amount"].sum()
     )
-    merge_all.loc[len(merge_all) +1] = ["Change in Cash Flows", change_in_cash]
+    merge_all.loc[len(merge_all)] = ["","Change in Cash Flows", change_in_cash]
+
+
 
 
     ending_cash_bal = merge_all.loc[merge_all['account'] == 'Beginning Cash Balance', 'Amount'] .sum() + merge_all.loc[merge_all['account'] == 'Change in Cash Flows', 'Amount'].sum()
 
 
-    merge_all.loc[len(merge_all) +2] = ["Ending Cash Balance", ending_cash_bal]
+    merge_all.loc[len(merge_all) +2] = ["","Ending Cash Balance", ending_cash_bal]
+
+
+
 
     final_cf = merge_all
 
