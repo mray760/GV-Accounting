@@ -17,14 +17,34 @@ def write_period_bal(period, tb, bucket = BUCKET, base_prefix = prefix):
     key = f"{base_prefix}/period={period}/balances.csv"
     s3_uri = f"s3://{bucket}/{key}"
     write_csv(tb, s3_uri)
-    print("Successfully wrote to S3")
+    print("Successfully wrote TB balances to S3")
+    return s3_uri
+
+def write_re_bal(period,re_df, bucket = BUCKET, base_prefix = prefix):
+    period = period.replace("/", ".")
+
+    def write_csv(df: pd.DataFrame, s3_uri: str) -> None:
+        """Write a DataFrame to CSV in S3"""
+        with fs.open(s3_uri, "w") as f:
+            re_df.to_csv(f, index=False)
+
+    key = f"{base_prefix}/period={period}/balances_re.csv"
+    s3_uri = f"s3://{bucket}/{key}"
+    write_csv(re_df, s3_uri)
+    print("Successfully wrote re_balances to S3")
     return s3_uri
 
 
-def normalize_balances(trial_balance):
+
+def normalize_balances(trial_balance,retained_earnings, period):
     tb = trial_balance.copy()
     tb.rename(columns = {'ending_balance': 'balance', 'to_period': 'period'}, inplace=True)
     tb = tb[['period','gl_code','account','balance']]
-    return tb
+
+    retained_earnings = retained_earnings[['account','Amount']]
+    retained_earnings.rename(columns = {'account': 'Account', 'Amount': 'balance'})
+    retained_earnings['period'] = period
+
+    return tb, retained_earnings
 
 
