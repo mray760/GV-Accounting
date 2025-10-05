@@ -5,8 +5,8 @@ from operating_cf import create_cf_statement
 from yardi_norm import normalize_raw_yardi
 from Pull_S3_Bank import load_S3_data
 from Pull_S3_Yardi import load_S3_yardi
-from load_balances import write_period_bal, normalize_balances
-from pull_balances import read_beg_balances
+from load_balances import write_period_bal, normalize_balances , write_re_bal
+from pull_balances import read_beg_balances, read_re_balances
 from pop_ups import confirm_run
 from to_excel import save_to_excel
 
@@ -87,21 +87,28 @@ def run_accounting_pipeline(output_file):
     operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal,general_journal=general_journal)
     save_to_excel(general_journal,trial_balance, income_statement, operating_cf, output_file)
 
-    return trial_balance
+    return trial_balance, income_statement
 
 
 
 excel_period = to_period.replace('/', '.')
 
-tb = run_accounting_pipeline(output_file = fr'/Users/mattray/Desktop/GV Accouting/Outputs/accounting_{excel_period}.xlsx')
+tb, income_statement = run_accounting_pipeline(output_file = fr'/Users/mattray/Desktop/GV Accouting/Outputs/accounting_{excel_period}.xlsx')
+
+
+re_df = income_statement
+re_df = re_df[re_df['Type'] == 'Net Income']
+
 
 if run_monthly_load_balance == True:
     if confirm_run():
         print("Running monthly balances...")
-        bal_df = normalize_balances(trial_balance=tb)
+        bal_df, re_df = normalize_balances(trial_balance=tb, retained_earnings=re_df, period=to_period)
         write_period_bal(period=to_period, tb =bal_df)
+        write_re_bal(period=to_period, re_df= re_df)
     else:
         print("cancelled")
 
 
+print(read_re_balances(period = from_period))
 
