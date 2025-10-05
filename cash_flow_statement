@@ -9,7 +9,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
 
     general_journal['Credit'] = general_journal['Credit'].fillna('N')
 
-    ### create credit entries
+    ### Create credit entries
     credit_entries = general_journal[general_journal['Credit'] == 'Y']
     credit_entries = credit_entries[(credit_entries['account'] != 'Cash') & (credit_entries['account'] != 'PP&E') & (credit_entries['account'] != 'Credit Card')]
     mask = credit_entries["Credit"].eq("Y")
@@ -22,11 +22,18 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     credit_entries_out = pd.DataFrame({"account": ["Credit Card"], "Amount": [total]})
 
 
+    ### Credit Refund
+    credit_entries_r = general_journal[general_journal['Credit'] == 'Y']
+    credit_entries_r = credit_entries_r[(credit_entries_r['account'] != 'Cash') & (credit_entries_r['account'] != 'PP&E') & (
+                credit_entries_r['account'] != 'Credit Card')]
+    mask = credit_entries_r["Credit"].eq("Y")
+    total = (credit_entries_r.loc[mask, "credit"]
+             .astype(str).str.replace(",", "", regex=False)
+             .pipe(pd.to_numeric, errors="coerce")
+             .fillna(0)
+             .sum())
 
-
-    ### Oprating Credits
-
-
+    credit_entries_refund = pd.DataFrame({"account": ["Credit Card - Refund"], "Amount": [total]})
 
 
 
@@ -51,13 +58,14 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
 
-    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out])
+    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out,credit_entries_refund])
 
     total_value = (
             merged_df.loc[merged_df["account"] == "Net Income", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Unearned Rent", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Accounts Receivable", "Amount"].sum()
             + credit_entries.loc[credit_entries['Credit'] == 'Y',"debit"].sum()
+            - credit_entries_r.loc[credit_entries_r['Credit'] == 'Y',"credit"].sum()
     )
 
     merged_df.loc[len(merged_df)] = ["Operating Cash Flows", total_value]
@@ -77,19 +85,6 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
              .sum())
 
     investing_cf = pd.DataFrame({"account": ["PP&E"], "Amount": [total_i]})
-
-
-
-
-
-
-    #investing_accounts = trial_balance[trial_balance['account'] == 'PP&E'].copy()
-    #investing_accounts = investing_accounts[['account','Net D/C']]
-    #investing_accounts['Amount'] = investing_accounts['Net D/C'].abs()
-    #investing_accounts.drop(columns={'Net D/C'}, inplace=True)
-
-
-
 
 
     ### Financing
@@ -167,6 +162,8 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
 
 
     final_cf = merge_all
+
+    final_cf.rename(columns={'type': 'Type', 'account':'Account'}, inplace=True)
 
 
 
