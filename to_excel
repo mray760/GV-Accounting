@@ -1,11 +1,13 @@
 import pandas as pd
 
 
-def save_to_excel(general_journal, trial_balance, income_statement, operating_cf, output_file):
+
+def save_to_excel(general_journal, trial_balance, income_statement, operating_cf, balance_sheet, output_file):
     with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
         general_journal.to_excel(writer, sheet_name='General Journal', index=False)
         trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
         income_statement.to_excel(writer,sheet_name='Income Statement',index=False)
+        balance_sheet.to_excel(writer,sheet_name='Balance Sheet', index=False)
         operating_cf.to_excel(writer,sheet_name='Operating CF', index=False)
 
         # ---- Formatting for Trial Balance ----
