@@ -22,7 +22,7 @@ def create_bs_statement(trial_balance,beg_re,income_statement):
     #### Calculate different account types
     asset_accounts = ['Cash','Accounts Receivable', 'PP&E']
     liability_accounts = ['Unearned Rent','Credit Card']
-    equity_accounts = ['capital-pt','capital-rc','Suspense','Retained Earnings']
+    equity_accounts = ['capital-pt','capital-rc','Suspense','Retained Earnings','Cash Transfers']
 
 
     assets = tb[tb['account'].isin(asset_accounts)].copy()
