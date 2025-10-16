@@ -10,3 +10,13 @@ def confirm_run():
     root.destroy()   # Clean up
 
     return answer
+
+
+def confirm_publishing():
+    root = tk.Tk()
+    root.withdraw()  # Hide main window
+
+    answer = messagebox.askyesno("Confirmation", "Are you sure you want to publish reports?")
+    root.destroy()  # Clean up
+
+    return answer
