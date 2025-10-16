@@ -5,17 +5,20 @@ from operating_cf import create_cf_statement
 from yardi_norm import normalize_raw_yardi
 from Pull_S3_Bank import load_S3_data
 from Pull_S3_Yardi import load_S3_yardi
-from load_balances import write_period_bal, normalize_balances , write_re_bal
 from pull_balances import read_beg_balances, read_re_balances
-from pop_ups import confirm_run
+from pop_ups import confirm_run, confirm_publishing
 from to_excel import save_to_excel
 from balance_sheet import create_bs_statement
+from monthly_load_balance import load_monthly_balance
+from publish import publish_reports
+from checks import run_checks
 
 
 ###Parameters
 run_monthly_load_balance = False
-from_period = '08/2025'   ## format is mm/yyyy
-to_period = '08/2025'
+publish_report = False
+from_period = '09/2025'   ## format is mm/yyyy
+to_period = '09/2025'
 
 
 ### caclulate periods
@@ -92,7 +95,15 @@ def run_accounting_pipeline(output_file):
     income_statement = create_income_statement(trial_balance)
     balance_sheet = create_bs_statement(trial_balance=trial_balance,beg_re=beg_re,income_statement=income_statement)
     operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal,general_journal=general_journal)
+    run_checks(balance_sheet,trial_balance)
     save_to_excel(general_journal,trial_balance, income_statement, operating_cf, balance_sheet, output_file)
+    if publish_report == True:
+        if confirm_publishing():
+            publish_reports(general_journal,trial_balance, income_statement, operating_cf, balance_sheet,to_period)
+        else:
+            print("cancelled")
+    else:
+        pass
 
     return trial_balance, income_statement
 
@@ -104,16 +115,16 @@ tb, income_statement = run_accounting_pipeline(output_file = fr'/Users/mattray/D
 
 
 
+re_df = income_statement[income_statement['account'] == 'Net Income']
+
+
+
 
 if run_monthly_load_balance == True:
     if confirm_run():
-        print("Running monthly balances...")
-        bal_df, re_df = normalize_balances(trial_balance=tb, retained_earnings=re_df, period=to_period)
-        write_period_bal(period=to_period, tb =bal_df)
-        write_re_bal(period=to_period, re_df= re_df)
+        load_monthly_balance(tb,re_df,to_period)
     else:
         print("cancelled")
 
 
-#print(read_re_balances(period = from_period))
 
