@@ -1,0 +1,9 @@
+from load_balances import write_period_bal, normalize_balances , write_re_bal
+from pop_ups import confirm_run
+import pandas as pd
+
+def load_monthly_balance(trial_balance, retained_earnings, to_period):
+        print("Running monthly balances...")
+        bal_df, re_df = normalize_balances(trial_balance=trial_balance, retained_earnings=retained_earnings, period=to_period)
+        write_period_bal(period=to_period, tb =bal_df)
+        write_re_bal(period=to_period, re_df= re_df)
