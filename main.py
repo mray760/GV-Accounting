@@ -9,12 +9,13 @@ from load_balances import write_period_bal, normalize_balances , write_re_bal
 from pull_balances import read_beg_balances, read_re_balances
 from pop_ups import confirm_run
 from to_excel import save_to_excel
+from balance_sheet import create_bs_statement
 
 
 ###Parameters
 run_monthly_load_balance = False
-from_period = '09/2025'
-to_period = '09/2025'
+from_period = '08/2025'   ## format is mm/yyyy
+to_period = '08/2025'
 
 
 ### caclulate periods
@@ -61,9 +62,13 @@ def create_trial_balance(general_journal,beg_bal,from_period,to_period):
                                   'period': '_beg_period'})
 
     tb = tb.merge(beg[['gl_code', 'account', 'beginning_balance']],
-                  on=['gl_code', 'account'], how='left')
+                  on=['gl_code', 'account'], how='outer')
+
 
     tb['beginning_balance'] = tb['beginning_balance'].fillna(0.0)
+    tb['Net D/C'] = tb['Net D/C'].fillna(0.0)
+    tb['total_debit'] = tb['total_debit'].fillna(0.0)
+    tb['total_credit'] = tb['total_credit'].fillna(0.0)
 
     # --- compute ending balances
     tb['ending_balance'] = tb['beginning_balance'] + tb['Net D/C']
@@ -79,13 +84,15 @@ def create_trial_balance(general_journal,beg_bal,from_period,to_period):
 # Run full accounting pipeline
 def run_accounting_pipeline(output_file):
     beg_bal = read_beg_balances(period = from_period)
+    beg_re = read_re_balances(period=from_period)
     transactions_df = load_S3_data(periods= selected_periods)
     yardi_df = load_S3_yardi(periods= selected_periods)
     general_journal = create_general_journal(yardi_df, transactions_df)
     trial_balance = create_trial_balance(general_journal,beg_bal,from_period,to_period)
     income_statement = create_income_statement(trial_balance)
+    balance_sheet = create_bs_statement(trial_balance=trial_balance,beg_re=beg_re,income_statement=income_statement)
     operating_cf = create_cf_statement(trial_balance=trial_balance,income_statement=income_statement,cash_balances=beg_bal,general_journal=general_journal)
-    save_to_excel(general_journal,trial_balance, income_statement, operating_cf, output_file)
+    save_to_excel(general_journal,trial_balance, income_statement, operating_cf, balance_sheet, output_file)
 
     return trial_balance, income_statement
 
@@ -96,8 +103,6 @@ excel_period = to_period.replace('/', '.')
 tb, income_statement = run_accounting_pipeline(output_file = fr'/Users/mattray/Desktop/GV Accouting/Outputs/accounting_{excel_period}.xlsx')
 
 
-re_df = income_statement
-re_df = re_df[re_df['Type'] == 'Net Income']
 
 
 if run_monthly_load_balance == True:
@@ -110,5 +115,5 @@ if run_monthly_load_balance == True:
         print("cancelled")
 
 
-print(read_re_balances(period = from_period))
+#print(read_re_balances(period = from_period))
 
