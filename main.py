@@ -14,11 +14,11 @@ from publish import publish_reports
 from checks import run_checks
 
 
-###Parameters
+###Parametersf
 run_monthly_load_balance = False
-publish_report = False
-from_period = '09/2025'   ## format is mm/yyyy
-to_period = '09/2025'
+publish_report = True
+from_period = '08/2025'   ## format is mm/yyyy
+to_period = '08/2025'
 
 
 ### caclulate periods
@@ -44,7 +44,7 @@ def create_general_journal(yardi_df, transactions_df):
     yardi_entries = normalize_raw_yardi(yardi_df)
     df = pd.concat([yardi_entries, journal_transactions], ignore_index=True)
     df = df.drop(['tenant'],axis = 1)
-
+    df.rename(columns = {'Credit': 'credit_flag'}, inplace=True)
     return df
 
 
@@ -115,7 +115,7 @@ tb, income_statement = run_accounting_pipeline(output_file = fr'/Users/mattray/D
 
 
 
-re_df = income_statement[income_statement['account'] == 'Net Income']
+re_df = income_statement[income_statement['Account'] == 'Net Income']
 
 
 
