@@ -14,25 +14,54 @@ def publish_reports(general_journal, trial_balance, income_statement, operating_
     key = f"{prefix}/period={period}.xlsx"
     s3_uri = f"s3://{BUCKET}/{key}"
 
+    ### Rename Columns
+    trial_balance.rename(
+        columns={'from_period': 'From Period', 'to_period': 'To Period', 'gl_code': 'GL Code', 'account': 'Account',
+                 'total_debit': 'Total Debit', 'total_credit': 'Total Credit', 'beginning_balance': 'Beginning Balance',
+                 'ending_balance': 'Ending Balance'}, inplace=True)
+    income_statement.rename(columns={'account': 'Account'}, inplace=True)
+    balance_sheet.rename(columns={'type': 'Type', 'account': 'Account'}, inplace=True)
+    general_journal.rename(columns={'gl_code': 'GL Code', 'period': 'Period', 'debit': 'Debit', 'credit': 'Credit',
+                                    'description': 'Description', 'account': 'Account', 'date': 'Date',
+                                    'credit_flag': 'Credit Flag'}, inplace=True)
+
+    # Dictionary of all DataFrames with their sheet names
+    sheets = {
+        "General Journal": general_journal,
+        "Trial Balance": trial_balance,
+        "Income Statement": income_statement,
+        "Operating CF": operating_cf,
+        "Balance Sheet": balance_sheet
+    }
+
+
     with fs.open(s3_uri, "wb") as f:
         with pd.ExcelWriter(f, engine="xlsxwriter") as writer:
-            general_journal.to_excel(writer, sheet_name='General Journal', index=False)
-            trial_balance.to_excel(writer, sheet_name='Trial Balance', index=False)
-            income_statement.to_excel(writer, sheet_name='Income Statement', index=False)
-            balance_sheet.to_excel(writer, sheet_name='Balance Sheet', index=False)
-            operating_cf.to_excel(writer, sheet_name='Operating CF', index=False)
+            # Write each DataFrame to its sheet
+            for sheet_name, df in sheets.items():
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
 
+            # Get workbook object for formatting
             workbook = writer.book
-            worksheet = writer.sheets["Trial Balance"]
-
-            for i, col in enumerate(trial_balance.columns):
-                max_len = max(
-                    trial_balance[col].astype(str).map(len).max() if not trial_balance.empty else 0,
-                    len(col)
-                ) + 2
-                worksheet.set_column(i, i, max_len)
-
             money_fmt = workbook.add_format({'num_format': '#,##0.00'})
-            worksheet.set_column(4, 8, None, money_fmt)
+            text_fmt = workbook.add_format({'num_format': '@'})  # for text columns
 
-            print("Reports successfully published")
+            # Apply formatting to each worksheet
+            for sheet_name, df in sheets.items():
+                worksheet = writer.sheets[sheet_name]
+
+                for i, col in enumerate(df.columns):
+                    # Determine max width (header vs. longest value)
+                    try:
+                        max_len = max(df[col].astype(str).map(len).max(), len(col)) + 2
+                    except Exception:
+                        max_len = len(col) + 2
+                    worksheet.set_column(i, i, max_len)
+
+                    # Apply accounting format if the column is numeric
+                    if pd.api.types.is_numeric_dtype(df[col]) and col != "GL Code":
+                        worksheet.set_column(i, i, max_len, money_fmt)
+                    else:
+                        worksheet.set_column(i, i, max_len, text_fmt)
+
+            print(f"✅ Successfully Published to S3")
