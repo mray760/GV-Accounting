@@ -7,13 +7,14 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     empty_rows = pd.DataFrame(
         {'account': [None] * num_empty_rows, 'Amount': [None] * num_empty_rows})
 
-    general_journal['Credit'] = general_journal['Credit'].fillna('N')
+    general_journal['credit_flag'] = general_journal['credit_flag'].fillna('N')
 
     ### Create credit entries
-    credit_entries = general_journal[general_journal['Credit'] == 'Y']
+    credit_entries = general_journal[general_journal['credit_flag'] == 'Y'].copy()
+    credit_entries['Net D/C'] = credit_entries['debit'] - credit_entries['credit']
     credit_entries = credit_entries[(credit_entries['account'] != 'Cash') & (credit_entries['account'] != 'PP&E') & (credit_entries['account'] != 'Credit Card')]
-    mask = credit_entries["Credit"].eq("Y")
-    total = (credit_entries.loc[mask, "debit"]
+    mask = credit_entries["credit_flag"].eq("Y")
+    total = (credit_entries.loc[mask, "Net D/C"]
              .astype(str).str.replace(",", "", regex=False)
              .pipe(pd.to_numeric, errors="coerce")
              .fillna(0)
@@ -22,18 +23,6 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     credit_entries_out = pd.DataFrame({"account": ["Credit Card"], "Amount": [total]})
 
 
-    ### Credit Refund
-    credit_entries_r = general_journal[general_journal['Credit'] == 'Y']
-    credit_entries_r = credit_entries_r[(credit_entries_r['account'] != 'Cash') & (credit_entries_r['account'] != 'PP&E') & (
-                credit_entries_r['account'] != 'Credit Card')]
-    mask = credit_entries_r["Credit"].eq("Y")
-    total = (credit_entries_r.loc[mask, "credit"]
-             .astype(str).str.replace(",", "", regex=False)
-             .pipe(pd.to_numeric, errors="coerce")
-             .fillna(0)
-             .sum())
-
-    credit_entries_refund = pd.DataFrame({"account": ["Credit Card - Refund"], "Amount": [total]})
 
 
 
@@ -58,14 +47,14 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     non_cash_expenses.drop(columns='Net D/C', inplace=True)
 
 
-    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out,credit_entries_refund])
+    merged_df = pd.concat([net_income_df,non_cash_expenses,non_cash_revenues,credit_entries_out])
 
     total_value = (
             merged_df.loc[merged_df["account"] == "Net Income", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Unearned Rent", "Amount"].sum()
             - merged_df.loc[merged_df["account"] == "Accounts Receivable", "Amount"].sum()
-            + credit_entries.loc[credit_entries['Credit'] == 'Y',"debit"].sum()
-            - credit_entries_r.loc[credit_entries_r['Credit'] == 'Y',"credit"].sum()
+            + credit_entries.loc[credit_entries['credit_flag'] == 'Y',"Net D/C"].sum()
+
     )
 
     merged_df.loc[len(merged_df)] = ["Operating Cash Flows", total_value]
@@ -75,9 +64,9 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
 
 
     #### Investing
-    non_credit_entries = general_journal[general_journal['Credit'] == 'N']
+    non_credit_entries = general_journal[general_journal['credit_flag'] == 'N']
     non_credit_entries = non_credit_entries[non_credit_entries['account'] == 'PP&E']
-    mask_1 = non_credit_entries["Credit"].eq("N")
+    mask_1 = non_credit_entries["credit_flag"].eq("N")
     total_i = (non_credit_entries.loc[mask_1, "debit"]
              .astype(str).str.replace(",", "", regex=False)
              .pipe(pd.to_numeric, errors="coerce")
@@ -89,9 +78,9 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
 
     ### Financing
 
-    credit_repayment = general_journal[general_journal['Credit'] == 'Y']
+    credit_repayment = general_journal[general_journal['credit_flag'] == 'Y']
     credit_repayment = credit_repayment[credit_repayment['account'] == 'Cash']
-    mask_2 = credit_repayment["Credit"].eq("Y")
+    mask_2 = credit_repayment["credit_flag"].eq("Y")
     total_f = (credit_repayment.loc[mask_2, "credit"]
                .astype(str).str.replace(",", "", regex=False)
                .pipe(pd.to_numeric, errors="coerce")
@@ -137,7 +126,7 @@ def create_cf_statement(income_statement, trial_balance,cash_balances,general_jo
     operating_cf = add_type_column(operating_cf, 'Operating Cash Flow')
     investing_cf = add_type_column(investing_cf, 'Investing Cash Flow')
     financing_cf = add_type_column(financing_cf, 'Financing Cash Flow')
-    #cash_bal = add_type_column(cash_bal,'Cash Balances')
+
 
     merge_all = pd.concat([operating_cf, empty_rows, investing_cf, empty_rows, financing_cf, empty_rows, cash_bal])
 
